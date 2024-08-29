@@ -1,0 +1,17 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "emilounge",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "emilounge",
+      "justMyCode": false,
+      "env": {
+        "PATH": "${workspaceFolder}/.venv/bin:${env:PATH}",
+        "PYTHONPATH": "${workspaceFolder}/.venv/lib/python3.12/site-packages:${env:EXTRAPYTHONPATH}",
+        "EMILOUNGE__DEBUG": "true"
+      }
+    }
+  ]
+}
