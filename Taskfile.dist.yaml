@@ -223,7 +223,7 @@ tasks:
         .env.python
         run
         --
-        emilounge
+        numbat
         {{ .CLI_ARGS }}
   docker:
     desc: Run in docker container

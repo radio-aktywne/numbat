@@ -3,10 +3,10 @@ slug: /
 title: Index
 ---
 
-# emilounge
+# numbat
 
 Broadcast prerecordings 🛋️
 
 ## 💡 About
 
-`emilounge` is a service for managing prerecorded broadcasts.
+`numbat` is a service for managing prerecorded broadcasts.

@@ -7,9 +7,9 @@ from litestar import Litestar
 from litestar.testing import AsyncTestClient
 from minio import Minio
 
-from emilounge.api.app import AppBuilder
-from emilounge.config.builder import ConfigBuilder
-from emilounge.config.models import Config
+from numbat.api.app import AppBuilder
+from numbat.config.builder import ConfigBuilder
+from numbat.config.models import Config
 from tests.utils.containers import AsyncDockerContainer
 from tests.utils.waiting.conditions import CallableCondition, CommandCondition
 from tests.utils.waiting.strategies import TimeoutStrategy
@@ -83,34 +83,8 @@ async def datatimes() -> AsyncGenerator[AsyncDockerContainer]:
 
 
 @pytest_asyncio.fixture(scope="session")
-async def emishows(
-    datashows: AsyncDockerContainer, datatimes: AsyncDockerContainer
-) -> AsyncGenerator[AsyncDockerContainer]:
-    """Emishows container."""
-
-    async def _check() -> None:
-        async with AsyncClient(base_url="http://localhost:35000") as client:
-            response = await client.get("/ping")
-            response.raise_for_status()
-
-    container = AsyncDockerContainer(
-        "ghcr.io/radio-aktywne/services/emishows:latest",
-        network="host",
-    )
-
-    waiter = Waiter(
-        condition=CallableCondition(_check),
-        strategy=TimeoutStrategy(30),
-    )
-
-    async with container as container:
-        await waiter.wait()
-        yield container
-
-
-@pytest_asyncio.fixture(scope="session")
-async def medialounge() -> AsyncGenerator[AsyncDockerContainer]:
-    """Medialounge container."""
+async def amber() -> AsyncGenerator[AsyncDockerContainer]:
+    """Amber container."""
 
     async def _check() -> None:
         async with AsyncClient(base_url="http://localhost:29000") as client:
@@ -118,7 +92,7 @@ async def medialounge() -> AsyncGenerator[AsyncDockerContainer]:
             response.raise_for_status()
 
     container = AsyncDockerContainer(
-        "ghcr.io/radio-aktywne/databases/medialounge:latest",
+        "ghcr.io/radio-aktywne/databases/amber:latest",
         network="host",
     )
 
@@ -133,18 +107,34 @@ async def medialounge() -> AsyncGenerator[AsyncDockerContainer]:
 
 
 @pytest_asyncio.fixture(scope="session")
-async def emishows_client(
-    emishows: AsyncDockerContainer,
-) -> AsyncGenerator[AsyncClient]:
-    """Emishows client."""
+async def beaver(
+    datashows: AsyncDockerContainer, datatimes: AsyncDockerContainer
+) -> AsyncGenerator[AsyncDockerContainer]:
+    """Beaver container."""
 
-    async with AsyncClient(base_url="http://localhost:35000") as client:
-        yield client
+    async def _check() -> None:
+        async with AsyncClient(base_url="http://localhost:35000") as client:
+            response = await client.get("/ping")
+            response.raise_for_status()
+
+    container = AsyncDockerContainer(
+        "ghcr.io/radio-aktywne/services/beaver:latest",
+        network="host",
+    )
+
+    waiter = Waiter(
+        condition=CallableCondition(_check),
+        strategy=TimeoutStrategy(30),
+    )
+
+    async with container as container:
+        await waiter.wait()
+        yield container
 
 
 @pytest.fixture(scope="session")
-def medialounge_client(medialounge: AsyncDockerContainer) -> Minio:
-    """Medialounge client."""
+def amber_client(amber: AsyncDockerContainer) -> Minio:
+    """Amber client."""
 
     return Minio(
         endpoint="localhost:29000",
@@ -156,8 +146,18 @@ def medialounge_client(medialounge: AsyncDockerContainer) -> Minio:
 
 
 @pytest_asyncio.fixture(scope="session")
+async def beaver_client(
+    beaver: AsyncDockerContainer,
+) -> AsyncGenerator[AsyncClient]:
+    """Beaver client."""
+
+    async with AsyncClient(base_url="http://localhost:35000") as client:
+        yield client
+
+
+@pytest_asyncio.fixture(scope="session")
 async def client(
-    app: Litestar, emishows: AsyncDockerContainer, medialounge: AsyncDockerContainer
+    app: Litestar, amber: AsyncDockerContainer, beaver: AsyncDockerContainer
 ) -> AsyncGenerator[AsyncTestClient]:
     """Reusable test client."""
 

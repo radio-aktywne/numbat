@@ -4,15 +4,15 @@ _src_path: gh:radio-aktywne/template-service-litestar
 accountname: radio-aktywne
 description: Broadcast prerecordings 🛋️
 docs: true
-docsurl: https://radio-aktywne.github.io/emilounge
+docsurl: https://radio-aktywne.github.io/numbat
 email: it@radioaktywne.pl
-envprefix: EMILOUNGE
+envprefix: NUMBAT
 events: false
-imagename: services/emilounge
-importname: emilounge
+imagename: services/numbat
+importname: numbat
 port: 28000
 registry: true
 releases: true
-reponame: emilounge
-repourl: https://github.com/radio-aktywne/emilounge
-servicename: emilounge
+reponame: numbat
+repourl: https://github.com/radio-aktywne/numbat
+servicename: numbat
