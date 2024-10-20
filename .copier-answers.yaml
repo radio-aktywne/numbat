@@ -10,7 +10,7 @@ envprefix: NUMBAT
 events: false
 imagename: services/numbat
 importname: numbat
-port: 28000
+port: 10600
 registry: true
 releases: true
 reponame: numbat

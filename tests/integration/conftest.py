@@ -31,44 +31,17 @@ def app(config: Config) -> Litestar:
 
 
 @pytest_asyncio.fixture(scope="session")
-async def datashows() -> AsyncGenerator[AsyncDockerContainer]:
-    """Datashows container."""
-
-    container = AsyncDockerContainer(
-        "ghcr.io/radio-aktywne/databases/datashows:latest",
-        network="host",
-        privileged=True,
-    )
-
-    waiter = Waiter(
-        condition=CommandCondition(
-            [
-                "usql",
-                "--command",
-                "SELECT 1;",
-                "postgres://user:password@localhost:34000/database",
-            ]
-        ),
-        strategy=TimeoutStrategy(30),
-    )
-
-    async with container as container:
-        await waiter.wait()
-        yield container
-
-
-@pytest_asyncio.fixture(scope="session")
-async def datatimes() -> AsyncGenerator[AsyncDockerContainer]:
-    """Datatimes container."""
+async def howlite() -> AsyncGenerator[AsyncDockerContainer]:
+    """Howlite container."""
 
     async def _check() -> None:
         auth = BasicAuth(username="user", password="password")
-        async with AsyncClient(base_url="http://localhost:36000", auth=auth) as client:
-            response = await client.get("/user/datatimes")
+        async with AsyncClient(base_url="http://localhost:10520", auth=auth) as client:
+            response = await client.get("/user/calendar")
             response.raise_for_status()
 
     container = AsyncDockerContainer(
-        "ghcr.io/radio-aktywne/databases/datatimes:latest",
+        "ghcr.io/radio-aktywne/databases/howlite:latest",
         network="host",
     )
 
@@ -83,11 +56,38 @@ async def datatimes() -> AsyncGenerator[AsyncDockerContainer]:
 
 
 @pytest_asyncio.fixture(scope="session")
+async def sapphire() -> AsyncGenerator[AsyncDockerContainer]:
+    """Sapphire container."""
+
+    container = AsyncDockerContainer(
+        "ghcr.io/radio-aktywne/databases/sapphire:latest",
+        network="host",
+        privileged=True,
+    )
+
+    waiter = Waiter(
+        condition=CommandCondition(
+            [
+                "usql",
+                "--command",
+                "SELECT 1;",
+                "postgres://user:password@localhost:10510/database",
+            ]
+        ),
+        strategy=TimeoutStrategy(30),
+    )
+
+    async with container as container:
+        await waiter.wait()
+        yield container
+
+
+@pytest_asyncio.fixture(scope="session")
 async def amber() -> AsyncGenerator[AsyncDockerContainer]:
     """Amber container."""
 
     async def _check() -> None:
-        async with AsyncClient(base_url="http://localhost:29000") as client:
+        async with AsyncClient(base_url="http://localhost:10610") as client:
             response = await client.get("/minio/health/ready")
             response.raise_for_status()
 
@@ -108,12 +108,12 @@ async def amber() -> AsyncGenerator[AsyncDockerContainer]:
 
 @pytest_asyncio.fixture(scope="session")
 async def beaver(
-    datashows: AsyncDockerContainer, datatimes: AsyncDockerContainer
+    howlite: AsyncDockerContainer, sapphire: AsyncDockerContainer
 ) -> AsyncGenerator[AsyncDockerContainer]:
     """Beaver container."""
 
     async def _check() -> None:
-        async with AsyncClient(base_url="http://localhost:35000") as client:
+        async with AsyncClient(base_url="http://localhost:10500") as client:
             response = await client.get("/ping")
             response.raise_for_status()
 
@@ -137,7 +137,7 @@ def amber_client(amber: AsyncDockerContainer) -> Minio:
     """Amber client."""
 
     return Minio(
-        endpoint="localhost:29000",
+        endpoint="localhost:10610",
         access_key="readwrite",
         secret_key="password",
         secure=False,
@@ -151,7 +151,7 @@ async def beaver_client(
 ) -> AsyncGenerator[AsyncClient]:
     """Beaver client."""
 
-    async with AsyncClient(base_url="http://localhost:35000") as client:
+    async with AsyncClient(base_url="http://localhost:10500") as client:
         yield client
 
 
