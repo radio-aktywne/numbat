@@ -12,7 +12,7 @@ You can configure the service at runtime using various environment variables:
   (default: `0.0.0.0`)
 - `NUMBAT__SERVER__PORT` -
   port to run the server on
-  (default: `28000`)
+  (default: `10600`)
 - `NUMBAT__SERVER__TRUSTED` -
   trusted IP addresses
   (default: `*`)
@@ -24,7 +24,7 @@ You can configure the service at runtime using various environment variables:
   (default: `localhost`)
 - `NUMBAT__AMBER__S3__PORT` -
   port of the S3 API of the amber database
-  (default: `29000`)
+  (default: `10610`)
 - `NUMBAT__AMBER__S3__USER` -
   user to authenticate with the S3 API of the amber database
   (default: `readwrite`)
@@ -39,7 +39,7 @@ You can configure the service at runtime using various environment variables:
   (default: `localhost`)
 - `NUMBAT__BEAVER__HTTP__PORT` -
   port of the HTTP API of the beaver service
-  (default: `35000`)
+  (default: `10500`)
 - `NUMBAT__BEAVER__HTTP__PATH` -
   path of the HTTP API of the beaver service
   (default: ``)
