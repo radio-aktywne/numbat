@@ -94,7 +94,7 @@ class MedialoungeConfig(BaseModel):
 
 
 class Config(BaseConfig):
-    """Configuration for the application."""
+    """Configuration for the service."""
 
     server: ServerConfig = ServerConfig()
     """Configuration for the server."""

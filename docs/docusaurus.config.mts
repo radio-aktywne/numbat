@@ -2,10 +2,10 @@ import type * as Preset from "@docusaurus/preset-classic";
 import type { Config } from "@docusaurus/types";
 import { themes } from "prism-react-renderer";
 
-const url = new URL("https://radio-aktywne.github.io/app-emilounge");
+const url = new URL("https://radio-aktywne.github.io/emilounge");
 
 const config: Config = {
-  title: "emilounge app docs",
+  title: "emilounge docs",
   favicon: "favicon.svg?v=1",
 
   url: `${url.protocol}//${url.host}`,
@@ -41,14 +41,14 @@ const config: Config = {
 
   themeConfig: {
     navbar: {
-      title: "emilounge app docs",
+      title: "emilounge docs",
       logo: {
-        alt: "emilounge app docs logo",
+        alt: "emilounge docs logo",
         src: "logo.svg?v=1",
       },
       items: [
         {
-          href: "https://github.com/radio-aktywne/app-emilounge",
+          href: "https://github.com/radio-aktywne/emilounge",
           position: "right",
           className: "header-github-link",
           "aria-label": "GitHub repository",

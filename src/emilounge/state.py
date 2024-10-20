@@ -6,13 +6,13 @@ from emilounge.services.medialounge.service import MedialoungeService
 
 
 class State(LitestarState):
-    """Use this class as a type hint for the state of the application."""
+    """Use this class as a type hint for the state of the service."""
 
     config: Config
-    """Configuration for the application."""
+    """Configuration for the service."""
 
     emishows: EmishowsService
-    """Service for emishows API."""
+    """Service for emishows service."""
 
     medialounge: MedialoungeService
     """Service for medialounge database."""

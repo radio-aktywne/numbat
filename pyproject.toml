@@ -2,7 +2,7 @@
 package-mode = true
 name = "emilounge"
 version = "0.1.0"
-description = "Emission prerecordings 🛋️"
+description = "Broadcast prerecordings 🛋️"
 authors = ["radio-aktywne <it@radioaktywne.pl>"]
 
 [tool.poetry.dependencies]

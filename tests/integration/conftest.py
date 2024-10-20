@@ -94,7 +94,7 @@ async def emishows(
             response.raise_for_status()
 
     container = AsyncDockerContainer(
-        "ghcr.io/radio-aktywne/apps/emishows:latest",
+        "ghcr.io/radio-aktywne/services/emishows:latest",
         network="host",
     )
 

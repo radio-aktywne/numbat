@@ -1,18 +1,18 @@
 # Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
-_commit: 0.16.0
-_src_path: gh:radio-aktywne/template-app-litestar
+_commit: 0.17.0
+_src_path: gh:radio-aktywne/template-service-litestar
 accountname: radio-aktywne
-appname: emilounge
-description: Emission prerecordings 🛋️
+description: Broadcast prerecordings 🛋️
 docs: true
-docsurl: https://radio-aktywne.github.io/app-emilounge
+docsurl: https://radio-aktywne.github.io/emilounge
 email: it@radioaktywne.pl
 envprefix: EMILOUNGE
 events: false
-imagename: apps/emilounge
+imagename: services/emilounge
 importname: emilounge
 port: 28000
 registry: true
 releases: true
-reponame: app-emilounge
-repourl: https://github.com/radio-aktywne/app-emilounge
+reponame: emilounge
+repourl: https://github.com/radio-aktywne/emilounge
+servicename: emilounge
