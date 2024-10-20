@@ -1,14 +1,14 @@
-<h1 align="center">emilounge app</h1>
+<h1 align="center">emilounge</h1>
 
 <div align="center">
 
-Emission prerecordings 🛋️
+Broadcast prerecordings 🛋️
 
-[![Lint](https://github.com/radio-aktywne/app-emilounge/actions/workflows/lint.yaml/badge.svg)](https://github.com/radio-aktywne/app-emilounge/actions/workflows/lint.yaml)
-[![Test](https://github.com/radio-aktywne/app-emilounge/actions/workflows/test.yaml/badge.svg)](https://github.com/radio-aktywne/app-emilounge/actions/workflows/test.yaml)
-[![Image](https://github.com/radio-aktywne/app-emilounge/actions/workflows/image.yaml/badge.svg)](https://github.com/radio-aktywne/app-emilounge/actions/workflows/image.yaml)
-[![Registry](https://github.com/radio-aktywne/app-emilounge/actions/workflows/registry.yaml/badge.svg)](https://github.com/radio-aktywne/app-emilounge/actions/workflows/registry.yaml)
-[![Docs](https://github.com/radio-aktywne/app-emilounge/actions/workflows/docs.yaml/badge.svg)](https://github.com/radio-aktywne/app-emilounge/actions/workflows/docs.yaml)
+[![Lint](https://github.com/radio-aktywne/emilounge/actions/workflows/lint.yaml/badge.svg)](https://github.com/radio-aktywne/emilounge/actions/workflows/lint.yaml)
+[![Test](https://github.com/radio-aktywne/emilounge/actions/workflows/test.yaml/badge.svg)](https://github.com/radio-aktywne/emilounge/actions/workflows/test.yaml)
+[![Image](https://github.com/radio-aktywne/emilounge/actions/workflows/image.yaml/badge.svg)](https://github.com/radio-aktywne/emilounge/actions/workflows/image.yaml)
+[![Registry](https://github.com/radio-aktywne/emilounge/actions/workflows/registry.yaml/badge.svg)](https://github.com/radio-aktywne/emilounge/actions/workflows/registry.yaml)
+[![Docs](https://github.com/radio-aktywne/emilounge/actions/workflows/docs.yaml/badge.svg)](https://github.com/radio-aktywne/emilounge/actions/workflows/docs.yaml)
 
 </div>
 
@@ -21,9 +21,9 @@ Emission prerecordings 🛋️
 ## 📄 Further Reading
 
 More in-depth documentation can be found
-[here](https://radio-aktywne.github.io/app-emilounge).
+[here](https://radio-aktywne.github.io/emilounge).
 
 ## 💻 Development
 
 Read more about how to develop the project
-[here](https://github.com/radio-aktywne/app-emilounge/blob/main/CONTRIBUTING.md).
+[here](https://github.com/radio-aktywne/emilounge/blob/main/CONTRIBUTING.md).

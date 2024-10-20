@@ -3,9 +3,9 @@ slug: /
 title: Index
 ---
 
-# emilounge app
+# emilounge
 
-Emission prerecordings 🛋️
+Broadcast prerecordings 🛋️
 
 ## 💡 About
 

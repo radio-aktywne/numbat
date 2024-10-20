@@ -66,12 +66,12 @@ class AppBuilder:
 
     def _build_openapi_config(self) -> OpenAPIConfig:
         return OpenAPIConfig(
-            # Title of the app
-            title="emilounge app",
-            # Version of the app
+            # Title of the service
+            title="emilounge",
+            # Version of the service
             version=metadata.version("emilounge"),
-            # Description of the app
-            summary="Emission prerecordings 🛋️",
+            # Description of the service
+            summary="Broadcast prerecordings 🛋️",
             # Use handler docstrings as operation descriptions
             use_handler_docstrings=True,
             # Endpoint to serve the OpenAPI docs from
