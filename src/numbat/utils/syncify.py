@@ -2,9 +2,9 @@ import asyncio
 from collections.abc import AsyncIterator, Generator, Iterator
 
 
-def iterator[
-    T
-](it: AsyncIterator[T], loop: asyncio.AbstractEventLoop | None = None) -> Iterator[T]:
+def iterator[T](
+    it: AsyncIterator[T], loop: asyncio.AbstractEventLoop | None = None
+) -> Iterator[T]:
     """Convert an async iterator to an iterator."""
 
     def _iterate(it: AsyncIterator[T], loop: asyncio.AbstractEventLoop) -> Generator[T]:

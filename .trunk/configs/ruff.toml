@@ -37,6 +37,9 @@ src = [
   "src/",
 ]
 
+# Set target Python version.
+target-version = "py312"
+
 [lint.isort]
 known-first-party = [
   # Treat tests as a first-party module.
