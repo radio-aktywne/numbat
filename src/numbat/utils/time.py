@@ -1,10 +1,10 @@
 from datetime import UTC, datetime
 from email.utils import format_datetime, parsedate_to_datetime
 from typing import Annotated
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import AfterValidator, TypeAdapter
 from pydantic import NaiveDatetime as PydanticNaiveDatetime
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 
 def awareutcnow() -> datetime:

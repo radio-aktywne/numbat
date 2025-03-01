@@ -16,5 +16,5 @@ services:
       - "NUMBAT__BEAVER__HTTP__HOST=${NUMBAT__BEAVER__HTTP__HOST:-localhost}"
       - "NUMBAT__BEAVER__HTTP__PORT=${NUMBAT__BEAVER__HTTP__PORT:-10500}"
       - "NUMBAT__BEAVER__HTTP__PATH=${NUMBAT__BEAVER__HTTP__PATH:-}"
-      - "NUMBAT__DEBUG=${NUMBAT__DEBUG:-false}"
+      - "NUMBAT__DEBUG=${NUMBAT__DEBUG:-true}"
     network_mode: host

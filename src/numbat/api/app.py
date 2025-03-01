@@ -5,9 +5,9 @@ from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from importlib import metadata
 
 from litestar import Litestar, Router
-from litestar.contrib.pydantic import PydanticPlugin
 from litestar.openapi import OpenAPIConfig
 from litestar.plugins import PluginProtocol
+from litestar.plugins.pydantic import PydanticPlugin
 from urllib3.exceptions import InsecureRequestWarning
 
 from numbat.api.routes.router import router

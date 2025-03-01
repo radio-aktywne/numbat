@@ -105,5 +105,5 @@ class Config(BaseConfig):
     beaver: BeaverConfig = BeaverConfig()
     """Configuration for the beaver service."""
 
-    debug: bool = False
+    debug: bool = True
     """Enable debug mode."""
