@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from datetime import datetime
 from enum import StrEnum
 from uuid import UUID
@@ -64,7 +65,7 @@ class ListResponse:
     offset: int | None
     """Number of skipped prerecordings."""
 
-    prerecordings: list[Prerecording]
+    prerecordings: Sequence[Prerecording]
     """List of prerecordings."""
 
 
@@ -105,8 +106,6 @@ class UploadRequest:
 class UploadResponse:
     """Response for uploading a prerecording."""
 
-    pass
-
 
 @datamodel
 class DeleteRequest:
@@ -122,5 +121,3 @@ class DeleteRequest:
 @datamodel
 class DeleteResponse:
     """Response for deleting a prerecording."""
-
-    pass

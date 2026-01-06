@@ -2,7 +2,7 @@
 
 <div align="center">
 
-Broadcast prerecordings 🛋️
+Broadcast prerecordings service 🛋️
 
 [![Lint](https://github.com/radio-aktywne/numbat/actions/workflows/lint.yaml/badge.svg)](https://github.com/radio-aktywne/numbat/actions/workflows/lint.yaml)
 [![Test](https://github.com/radio-aktywne/numbat/actions/workflows/test.yaml/badge.svg)](https://github.com/radio-aktywne/numbat/actions/workflows/test.yaml)
@@ -16,7 +16,8 @@ Broadcast prerecordings 🛋️
 
 ## 💡 About
 
-`numbat` is a service for managing prerecorded broadcasts.
+`numbat` is a [`Litestar`](https://litestar.dev) service
+for managing prerecorded broadcasts.
 
 ## 📄 Further Reading
 

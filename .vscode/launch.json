@@ -1,17 +1,14 @@
 {
-  "version": "0.2.0",
   "configurations": [
     {
-      "name": "numbat",
-      "type": "debugpy",
-      "request": "launch",
-      "module": "numbat",
       "justMyCode": false,
-      "env": {
-        "PATH": "${workspaceFolder}/.venv/bin:${env:PATH}",
-        "PYTHONPATH": "${workspaceFolder}/.venv/lib/python3.12/site-packages:${env:EXTRAPYTHONPATH}",
-        "NUMBAT__DEBUG": "true"
-      }
+      "module": "numbat",
+      "name": "numbat",
+      "python": "uv",
+      "pythonArgs": ["run", "python"],
+      "request": "launch",
+      "type": "debugpy"
     }
-  ]
+  ],
+  "version": "0.2.0"
 }

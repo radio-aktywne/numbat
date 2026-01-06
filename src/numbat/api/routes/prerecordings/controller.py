@@ -1,4 +1,4 @@
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Mapping
 from typing import Annotated
 
 from litestar import Controller as BaseController
@@ -6,9 +6,10 @@ from litestar import Request, handlers
 from litestar.datastructures import ResponseHeader
 from litestar.di import Provide
 from litestar.exceptions import InternalServerException
+from litestar.openapi import ResponseSpec
 from litestar.params import Parameter
 from litestar.response import Response, Stream
-from litestar.status_codes import HTTP_204_NO_CONTENT
+from litestar.status_codes import HTTP_200_OK, HTTP_204_NO_CONTENT
 
 from numbat.api.exceptions import BadRequestException, NotFoundException
 from numbat.api.routes.prerecordings import errors as e
@@ -31,7 +32,8 @@ class DependenciesBuilder:
             )
         )
 
-    def build(self) -> dict[str, Provide]:
+    def build(self) -> Mapping[str, Provide]:
+        """Build the dependencies."""
         return {
             "service": Provide(self._build_service),
         }
@@ -46,7 +48,7 @@ class Controller(BaseController):
         "/{event:uuid}",
         summary="List prerecordings",
     )
-    async def list(
+    async def list(  # noqa: PLR0913
         self,
         service: Service,
         event: Annotated[
@@ -87,7 +89,6 @@ class Controller(BaseController):
         ] = None,
     ) -> Response[m.ListResponseResults]:
         """List prerecordings."""
-
         req = m.ListRequest(
             event=event,
             after=after,
@@ -100,9 +101,9 @@ class Controller(BaseController):
         try:
             res = await service.list(req)
         except e.BadEventTypeError as ex:
-            raise BadRequestException(extra=str(ex)) from ex
+            raise BadRequestException from ex
         except e.EventNotFoundError as ex:
-            raise NotFoundException(extra=str(ex)) from ex
+            raise NotFoundException from ex
 
         results = res.results
 
@@ -133,6 +134,14 @@ class Controller(BaseController):
                 documentation_only=True,
             ),
         ],
+        responses={
+            HTTP_200_OK: ResponseSpec(
+                Stream,
+                description="Request fulfilled, stream follows",
+                generate_examples=False,
+                media_type="*/*",
+            )
+        },
     )
     async def download(
         self,
@@ -151,31 +160,30 @@ class Controller(BaseController):
         ],
     ) -> Stream:
         """Download a prerecording."""
-
-        start = Validator(m.DownloadRequestStart).object(start)
+        parsed_start = Validator[m.DownloadRequestStart].validate_object(start)
 
         req = m.DownloadRequest(
             event=event,
-            start=start,
+            start=parsed_start,
         )
 
         try:
             res = await service.download(req)
         except e.BadEventTypeError as ex:
-            raise BadRequestException(extra=str(ex)) from ex
+            raise BadRequestException from ex
         except e.InstanceNotFoundError as ex:
-            raise NotFoundException(extra=str(ex)) from ex
+            raise NotFoundException from ex
         except e.PrerecordingNotFoundError as ex:
-            raise NotFoundException(extra=str(ex)) from ex
+            raise NotFoundException from ex
 
-        type = res.type
+        content_type = res.type
         size = res.size
         tag = res.tag
         modified = res.modified
         data = res.data
 
         headers = {
-            "Content-Type": type,
+            "Content-Type": content_type,
             "Content-Length": str(size),
             "ETag": tag,
             "Last-Modified": httpstringify(modified),
@@ -210,6 +218,11 @@ class Controller(BaseController):
                 documentation_only=True,
             ),
         ],
+        responses={
+            HTTP_200_OK: ResponseSpec(
+                None, description="Request fulfilled, nothing follows"
+            )
+        },
     )
     async def headdownload(
         self,
@@ -228,30 +241,29 @@ class Controller(BaseController):
         ],
     ) -> Response[None]:
         """Download prerecording headers."""
-
-        start = Validator(m.HeadDownloadRequestStart).object(start)
+        parsed_start = Validator[m.HeadDownloadRequestStart].validate_object(start)
 
         req = m.HeadDownloadRequest(
             event=event,
-            start=start,
+            start=parsed_start,
         )
 
         try:
             res = await service.headdownload(req)
         except e.BadEventTypeError as ex:
-            raise BadRequestException(extra=str(ex)) from ex
+            raise BadRequestException from ex
         except e.InstanceNotFoundError as ex:
-            raise NotFoundException(extra=str(ex)) from ex
+            raise NotFoundException from ex
         except e.PrerecordingNotFoundError as ex:
-            raise NotFoundException(extra=str(ex)) from ex
+            raise NotFoundException from ex
 
-        type = res.type
+        content_type = res.type
         size = res.size
         tag = res.tag
         modified = res.modified
 
         headers = {
-            "Content-Type": type,
+            "Content-Type": content_type,
             "Content-Length": str(size),
             "ETag": tag,
             "Last-Modified": httpstringify(modified),
@@ -265,6 +277,11 @@ class Controller(BaseController):
         "/{event:uuid}/{start:str}",
         summary="Upload prerecording",
         status_code=HTTP_204_NO_CONTENT,
+        responses={
+            HTTP_204_NO_CONTENT: ResponseSpec(
+                None, description="Request fulfilled, nothing follows"
+            )
+        },
     )
     async def upload(
         self,
@@ -281,7 +298,7 @@ class Controller(BaseController):
                 description="Start time of the event instance in event timezone.",
             ),
         ],
-        type: Annotated[
+        content_type: Annotated[
             m.UploadRequestType,
             Parameter(
                 header="Content-Type",
@@ -302,27 +319,32 @@ class Controller(BaseController):
 
                 yield chunk
 
-        start = Validator(m.UploadRequestStart).object(start)
+        parsed_start = Validator[m.UploadRequestStart].validate_object(start)
 
         req = m.UploadRequest(
             event=event,
-            start=start,
-            type=type,
+            start=parsed_start,
+            type=content_type,
             data=_stream(request),
         )
 
         try:
             await service.upload(req)
         except e.BadEventTypeError as ex:
-            raise BadRequestException(extra=str(ex)) from ex
+            raise BadRequestException from ex
         except e.InstanceNotFoundError as ex:
-            raise NotFoundException(extra=str(ex)) from ex
+            raise NotFoundException from ex
 
         return Response(None)
 
     @handlers.delete(
         "/{event:uuid}/{start:str}",
         summary="Delete prerecording",
+        responses={
+            HTTP_204_NO_CONTENT: ResponseSpec(
+                None, description="Request fulfilled, nothing follows"
+            )
+        },
     )
     async def delete(
         self,
@@ -341,21 +363,20 @@ class Controller(BaseController):
         ],
     ) -> Response[None]:
         """Delete a prerecording."""
-
-        start = Validator(m.DeleteRequestStart).object(start)
+        parsed_start = Validator[m.DeleteRequestStart].validate_object(start)
 
         req = m.DeleteRequest(
             event=event,
-            start=start,
+            start=parsed_start,
         )
 
         try:
             await service.delete(req)
         except e.BadEventTypeError as ex:
-            raise BadRequestException(extra=str(ex)) from ex
+            raise BadRequestException from ex
         except e.InstanceNotFoundError as ex:
-            raise NotFoundException(extra=str(ex)) from ex
+            raise NotFoundException from ex
         except e.PrerecordingNotFoundError as ex:
-            raise NotFoundException(extra=str(ex)) from ex
+            raise NotFoundException from ex
 
         return Response(None)

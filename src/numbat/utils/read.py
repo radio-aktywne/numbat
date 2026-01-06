@@ -10,7 +10,6 @@ class ReadableIterator:
 
     def read(self, size: int | None = -1) -> bytes:
         """Read bytes from the iterator."""
-
         if size is None or size < 0:
             return b"".join(self._iterator)
 

@@ -1,13 +1,11 @@
 # Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
-_commit: 0.18.0
+_commit: 0.19.0
 _src_path: gh:radio-aktywne/template-service-litestar
 accountname: radio-aktywne
-description: Broadcast prerecordings 🛋️
+description: Broadcast prerecordings service 🛋️
 docs: true
 docsurl: https://radio-aktywne.github.io/numbat
-email: it@radioaktywne.pl
 envprefix: NUMBAT
-events: false
 imagename: services/numbat
 importname: numbat
 port: 10600

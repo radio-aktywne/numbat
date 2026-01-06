@@ -11,7 +11,7 @@ from numbat.services.prerecordings.service import PrerecordingsService
 class Service:
     """Service for the prerecordings endpoint."""
 
-    def __init__(self, prerecordings: PrerecordingsService):
+    def __init__(self, prerecordings: PrerecordingsService) -> None:
         self._prerecordings = prerecordings
 
     @contextmanager
@@ -35,7 +35,6 @@ class Service:
 
     async def list(self, request: m.ListRequest) -> m.ListResponse:
         """List prerecordings."""
-
         event = request.event
         after = request.after
         before = request.before
@@ -73,7 +72,6 @@ class Service:
 
     async def download(self, request: m.DownloadRequest) -> m.DownloadResponse:
         """Download a prerecording."""
-
         event = request.event
         start = request.start
 
@@ -87,13 +85,13 @@ class Service:
 
         content = res.content
 
-        type = content.type
+        content_type = content.type
         size = content.size
         tag = content.tag
         modified = content.modified
         data = content.data
         return m.DownloadResponse(
-            type=type,
+            type=content_type,
             size=size,
             tag=tag,
             modified=modified,
@@ -104,7 +102,6 @@ class Service:
         self, request: m.HeadDownloadRequest
     ) -> m.HeadDownloadResponse:
         """Download prerecording headers."""
-
         event = request.event
         start = request.start
 
@@ -118,12 +115,12 @@ class Service:
 
         content = res.content
 
-        type = content.type
+        content_type = content.type
         size = content.size
         tag = content.tag
         modified = content.modified
         return m.HeadDownloadResponse(
-            type=type,
+            type=content_type,
             size=size,
             tag=tag,
             modified=modified,
@@ -131,14 +128,13 @@ class Service:
 
     async def upload(self, request: m.UploadRequest) -> m.UploadResponse:
         """Upload a prerecording."""
-
         event = request.event
         start = request.start
-        type = request.type
+        content_type = request.type
         data = request.data
 
         content = pm.UploadContent(
-            type=type,
+            type=content_type,
             data=data,
         )
         req = pm.UploadRequest(
@@ -154,7 +150,6 @@ class Service:
 
     async def delete(self, request: m.DeleteRequest) -> m.DeleteResponse:
         """Delete a prerecording."""
-
         event = request.event
         start = request.start
 
