@@ -1,34 +1,32 @@
-import builtins
-from collections.abc import Generator
-from contextlib import contextmanager
+from typing import Any, Self
 
-from pydantic import TypeAdapter, ValidationError
+from pydantic import (
+    ModelWrapValidatorHandler,
+    RootModel,
+    ValidationError,
+    model_validator,
+)
+from pydantic_core import PydanticSerializationError
 
 from numbat.services.beaver import errors as e
 
 
-class Serializer[T]:
+class Serializer[T](RootModel[T]):
     """Serializes data."""
 
-    def __init__(self, type: builtins.type[T]) -> None:
-        self.Adapter = TypeAdapter(type)
-
-    @contextmanager
-    def _handle_errors(self) -> Generator[None]:
+    @model_validator(mode="wrap")
+    @classmethod
+    def validator(cls, data: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
+        """Validate input data."""
         try:
-            yield
+            return handler(data)
         except ValidationError as ex:
-            raise e.ServiceError(ex.errors(include_context=False)) from ex
+            raise e.SerializationError(ex.errors(include_context=False)) from ex
 
-    def json(self, value: T) -> str:
-        """Serialize to JSON."""
-
-        with self._handle_errors():
-            json = self.Adapter.dump_json(value, by_alias=True)
-
-        json = json.decode()
-
-        if json.startswith('"') and json.endswith('"'):
-            json = json[1:-1]
-
-        return json
+    @classmethod
+    def serialize(cls, value: T) -> str:
+        """Serialize the value."""
+        try:
+            return cls.model_validate(value).model_dump_json(by_alias=True).strip('"')
+        except PydanticSerializationError as ex:
+            raise e.SerializationError(str(ex)) from ex

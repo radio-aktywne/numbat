@@ -1,4 +1,4 @@
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Sequence
 from datetime import datetime
 from uuid import UUID
 
@@ -18,6 +18,7 @@ class Prerecording(SerializableModel):
 
     @staticmethod
     def map(prerecording: pm.Prerecording) -> "Prerecording":
+        """Map to internal representation."""
         return Prerecording(
             event=prerecording.event,
             start=prerecording.start,
@@ -36,7 +37,7 @@ class PrerecordingList(SerializableModel):
     offset: int | None
     """Number of skipped prerecordings."""
 
-    prerecordings: list[Prerecording]
+    prerecordings: Sequence[Prerecording]
     """List of prerecordings."""
 
 
@@ -204,8 +205,6 @@ class UploadRequest:
 class UploadResponse:
     """Response for uploading a prerecording."""
 
-    pass
-
 
 @datamodel
 class DeleteRequest:
@@ -221,5 +220,3 @@ class DeleteRequest:
 @datamodel
 class DeleteResponse:
     """Response for deleting a prerecording."""
-
-    pass

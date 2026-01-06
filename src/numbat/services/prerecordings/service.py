@@ -1,9 +1,13 @@
-from collections.abc import Generator
+from collections.abc import Generator, Sequence
 from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
 from http import HTTPStatus
+from typing import TYPE_CHECKING, cast
 from uuid import UUID
 from zoneinfo import ZoneInfo
+
+if TYPE_CHECKING:
+    from httpx import Response
 
 from numbat.services.amber import errors as ae
 from numbat.services.amber import models as am
@@ -18,7 +22,7 @@ from numbat.services.prerecordings import models as m
 class PrerecordingsService:
     """Service to manage prerecordings."""
 
-    def __init__(self, amber: AmberService, beaver: BeaverService):
+    def __init__(self, amber: AmberService, beaver: BeaverService) -> None:
         self._amber = amber
         self._beaver = beaver
 
@@ -49,7 +53,8 @@ class PrerecordingsService:
                 res = await self._beaver.events.mget(req)
             except be.ServiceError as ex:
                 if hasattr(ex, "response"):
-                    if ex.response.status_code == HTTPStatus.NOT_FOUND:
+                    response = cast("Response", ex.response)  # type: ignore[attr-defined]
+                    if response.status_code == HTTPStatus.NOT_FOUND:
                         return None
 
                 raise
@@ -128,7 +133,7 @@ class PrerecordingsService:
         start = self._parse_name(name)
         return event, start
 
-    async def _list_get_objects(self, prefix: str) -> list[am.Object]:
+    async def _list_get_objects(self, prefix: str) -> Sequence[am.Object]:
         req = am.ListRequest(
             prefix=prefix,
             recursive=False,
@@ -136,13 +141,15 @@ class PrerecordingsService:
 
         with self._handle_errors():
             res = await self._amber.list(req)
-            return [object async for object in res.objects]
+            return [obj async for obj in res.objects]
 
-    def _list_map_objects(self, objects: list[am.Object]) -> list[m.Prerecording]:
+    def _list_map_objects(
+        self, objects: Sequence[am.Object]
+    ) -> Sequence[m.Prerecording]:
         prerecordings = []
 
-        for object in objects:
-            event, start = self._parse_key(object.name)
+        for obj in objects:
+            event, start = self._parse_key(obj.name)
 
             prerecording = m.Prerecording(
                 event=event,
@@ -154,8 +161,8 @@ class PrerecordingsService:
         return prerecordings
 
     def _list_sort_prerecordings(
-        self, prerecordings: list[m.Prerecording], order: m.ListOrder | None
-    ) -> list[m.Prerecording]:
+        self, prerecordings: Sequence[m.Prerecording], order: m.ListOrder | None
+    ) -> Sequence[m.Prerecording]:
         if order is None:
             return prerecordings
 
@@ -167,10 +174,10 @@ class PrerecordingsService:
 
     def _list_filter_prerecordings(
         self,
-        prerecordings: list[m.Prerecording],
+        prerecordings: Sequence[m.Prerecording],
         after: datetime | None,
         before: datetime | None,
-    ) -> list[m.Prerecording]:
+    ) -> Sequence[m.Prerecording]:
         if after is not None:
             prerecordings = [
                 prerecording
@@ -188,8 +195,11 @@ class PrerecordingsService:
         return prerecordings
 
     def _list_pick_prerecordings(
-        self, prerecordings: list[m.Prerecording], limit: int | None, offset: int | None
-    ) -> list[m.Prerecording]:
+        self,
+        prerecordings: Sequence[m.Prerecording],
+        limit: int | None,
+        offset: int | None,
+    ) -> Sequence[m.Prerecording]:
         if offset is not None:
             prerecordings = prerecordings[offset:]
 
@@ -200,7 +210,6 @@ class PrerecordingsService:
 
     async def list(self, request: m.ListRequest) -> m.ListResponse:
         """List prerecordings."""
-
         event = request.event
         after = request.after
         before = request.before
@@ -231,7 +240,6 @@ class PrerecordingsService:
 
     async def download(self, request: m.DownloadRequest) -> m.DownloadResponse:
         """Download a prerecording."""
-
         event = request.event
         start = request.start
 
@@ -244,9 +252,8 @@ class PrerecordingsService:
             name=key,
         )
 
-        with self._handle_errors():
-            with self._handle_not_found(event, start):
-                res = await self._amber.download(req)
+        with self._handle_errors(), self._handle_not_found(event, start):
+            res = await self._amber.download(req)
 
         content = res.content
 
@@ -256,7 +263,6 @@ class PrerecordingsService:
 
     async def upload(self, request: m.UploadRequest) -> m.UploadResponse:
         """Upload a prerecording."""
-
         event = request.event
         start = request.start
         content = request.content
@@ -278,7 +284,6 @@ class PrerecordingsService:
 
     async def delete(self, request: m.DeleteRequest) -> m.DeleteResponse:
         """Delete a prerecording."""
-
         event = request.event
         start = request.start
 
@@ -291,8 +296,7 @@ class PrerecordingsService:
             name=key,
         )
 
-        with self._handle_errors():
-            with self._handle_not_found(event, start):
-                await self._amber.delete(req)
+        with self._handle_errors(), self._handle_not_found(event, start):
+            await self._amber.delete(req)
 
         return m.DeleteResponse()

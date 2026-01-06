@@ -5,8 +5,9 @@ title: Index
 
 # numbat
 
-Broadcast prerecordings 🛋️
+Broadcast prerecordings service 🛋️
 
 ## 💡 About
 
-`numbat` is a service for managing prerecorded broadcasts.
+`numbat` is a [`Litestar`](https://litestar.dev) service
+for managing prerecorded broadcasts.

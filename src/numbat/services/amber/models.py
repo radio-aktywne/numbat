@@ -1,4 +1,4 @@
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Mapping
 from datetime import datetime
 
 from numbat.models.base import datamodel
@@ -17,7 +17,7 @@ class Object:
     size: int | None
     """Size of the object in bytes."""
 
-    metadata: dict[str, str] | None
+    metadata: Mapping[str, str] | None
     """Metadata of the object."""
 
     type: str | None

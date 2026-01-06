@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from enum import StrEnum
 from typing import Annotated, Literal, TypedDict
 from uuid import UUID
@@ -7,33 +8,23 @@ from pydantic import Field
 from numbat.models.base import SerializableModel, datamodel, serializable
 from numbat.utils.time import NaiveDatetime, Timezone
 
-Second = Annotated[int, Field(..., ge=0, le=60)]
+Second = Annotated[int, Field(ge=0, le=60)]
 
-Minute = Annotated[int, Field(..., ge=0, le=59)]
+Minute = Annotated[int, Field(ge=0, le=59)]
 
-Hour = Annotated[int, Field(..., ge=0, le=23)]
+Hour = Annotated[int, Field(ge=0, le=23)]
 
-Monthday = (
-    Annotated[int, Field(..., ge=-31, le=-1)] | Annotated[int, Field(..., ge=1, le=31)]
-)
+Monthday = Annotated[int, Field(ge=-31, le=-1)] | Annotated[int, Field(ge=1, le=31)]
 
-Yearday = (
-    Annotated[int, Field(..., ge=-366, le=-1)]
-    | Annotated[int, Field(..., ge=1, le=366)]
-)
+Yearday = Annotated[int, Field(ge=-366, le=-1)] | Annotated[int, Field(ge=1, le=366)]
 
-Week = (
-    Annotated[int, Field(..., ge=-53, le=-1)] | Annotated[int, Field(..., ge=1, le=53)]
-)
+Week = Annotated[int, Field(ge=-53, le=-1)] | Annotated[int, Field(ge=1, le=53)]
 
-Month = Annotated[int, Field(..., ge=1, le=12)]
-
+Month = Annotated[int, Field(ge=1, le=12)]
 
 SortMode = Literal["default", "insensitive"]
 
-
 SortOrder = Literal["asc", "desc"]
-
 
 EventScalarFieldKeys = Literal[
     "id",
@@ -48,7 +39,7 @@ class StringFilter(
         "StringFilter",
         {
             "equals": str,
-            "not_in": list[str],
+            "not_in": Sequence[str],
             "lt": str,
             "lte": str,
             "gt": str,
@@ -56,7 +47,7 @@ class StringFilter(
             "contains": str,
             "startswith": str,
             "endswith": str,
-            "in": list[str],
+            "in": Sequence[str],
             "not": "str | StringFilter",
             "mode": SortMode,
         },
@@ -64,8 +55,6 @@ class StringFilter(
     )
 ):
     """String filter options."""
-
-    pass
 
 
 class Frequency(StrEnum):
@@ -125,31 +114,31 @@ class RecurrenceRule(SerializableModel):
     interval: int | None = None
     """Interval of the recurrence."""
 
-    by_seconds: list[Second] | None = None
+    by_seconds: Sequence[Second] | None = None
     """Seconds of the recurrence."""
 
-    by_minutes: list[Minute] | None = None
+    by_minutes: Sequence[Minute] | None = None
     """Minutes of the recurrence."""
 
-    by_hours: list[Hour] | None = None
+    by_hours: Sequence[Hour] | None = None
     """Hours of the recurrence."""
 
-    by_weekdays: list[WeekdayRule] | None = None
+    by_weekdays: Sequence[WeekdayRule] | None = None
     """Weekdays of the recurrence."""
 
-    by_monthdays: list[Monthday] | None = None
+    by_monthdays: Sequence[Monthday] | None = None
     """Monthdays of the recurrence."""
 
-    by_yeardays: list[Yearday] | None = None
+    by_yeardays: Sequence[Yearday] | None = None
     """Yeardays of the recurrence."""
 
-    by_weeks: list[Week] | None = None
+    by_weeks: Sequence[Week] | None = None
     """Weeks of the recurrence."""
 
-    by_months: list[Month] | None = None
+    by_months: Sequence[Month] | None = None
     """Months of the recurrence."""
 
-    by_set_positions: list[int] | None = None
+    by_set_positions: Sequence[int] | None = None
     """Set positions of the recurrence."""
 
     week_start: Weekday | None = None
@@ -162,10 +151,10 @@ class Recurrence(SerializableModel):
     rule: RecurrenceRule | None = None
     """Rule of the recurrence."""
 
-    include: list[NaiveDatetime] | None = None
+    include: Sequence[NaiveDatetime] | None = None
     """Included dates of the recurrence in event timezone."""
 
-    exclude: list[NaiveDatetime] | None = None
+    exclude: Sequence[NaiveDatetime] | None = None
     """Excluded dates of the recurrence in event timezone."""
 
 
@@ -181,7 +170,7 @@ class Show(SerializableModel):
     description: str | None
     """Description of the show."""
 
-    events: list["Event"] | None
+    events: Sequence["Event"] | None
     """Events that the show belongs to."""
 
 
@@ -226,8 +215,6 @@ class ShowRelationFilter(
 ):
     """Show relation filter."""
 
-    pass
-
 
 @serializable
 class EventListRelationFilter(TypedDict, total=False):
@@ -259,13 +246,13 @@ class ShowWhereInput(TypedDict, total=False):
     events: EventListRelationFilter
     """Filter for the events that the show belongs to."""
 
-    AND: list["ShowWhereInput"]
+    AND: Sequence["ShowWhereInput"]
     """Logical AND conditions."""
 
-    OR: list["ShowWhereInput"]
+    OR: Sequence["ShowWhereInput"]
     """Logical OR conditions."""
 
-    NOT: list["ShowWhereInput"]
+    NOT: Sequence["ShowWhereInput"]
     """Logical NOT conditions."""
 
 
@@ -285,13 +272,13 @@ class EventWhereInput(TypedDict, total=False):
     show: ShowRelationFilter
     """Filter for the show that the event belongs to."""
 
-    AND: list["EventWhereInput"]
+    AND: Sequence["EventWhereInput"]
     """Logical AND conditions."""
 
-    OR: list["EventWhereInput"]
+    OR: Sequence["EventWhereInput"]
     """Logical OR conditions."""
 
-    NOT: list["EventWhereInput"]
+    NOT: Sequence["EventWhereInput"]
     """Logical NOT conditions."""
 
 
@@ -324,7 +311,7 @@ class FindManyEventArgsFromShow(TypedDict, total=False):
     skip: int
     """Number of events to skip."""
 
-    order_by: "EventOrderByInput | list[EventOrderByInput]"
+    order_by: "EventOrderByInput | Sequence[EventOrderByInput]"
     """Order to apply to the results."""
 
     where: EventWhereInput
@@ -333,7 +320,7 @@ class FindManyEventArgsFromShow(TypedDict, total=False):
     cursor: EventWhereUniqueInput
     """Cursor to find events."""
 
-    distinct: list[EventScalarFieldKeys]
+    distinct: Sequence[EventScalarFieldKeys]
     """Distinct fields to select."""
 
     include: EventIncludeFromEvent
@@ -409,7 +396,7 @@ class Schedule(SerializableModel):
     event: Event
     """Event data."""
 
-    instances: list[EventInstance]
+    instances: Sequence[EventInstance]
     """Event instances."""
 
 
@@ -425,7 +412,7 @@ class ScheduleList(SerializableModel):
     offset: int | None
     """Number of schedules skipped."""
 
-    schedules: list[Schedule]
+    schedules: Sequence[Schedule]
     """Schedules that matched the request."""
 
 
@@ -447,7 +434,7 @@ ScheduleListRequestWhere = EventWhereInput | None
 
 ScheduleListRequestInclude = EventInclude | None
 
-ScheduleListRequestOrder = EventOrderByInput | list[EventOrderByInput] | None
+ScheduleListRequestOrder = EventOrderByInput | Sequence[EventOrderByInput] | None
 
 ScheduleListResponseResults = ScheduleList
 
