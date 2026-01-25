@@ -14,7 +14,7 @@ class Prerecording(SerializableModel):
     """Identifier of the event."""
 
     start: NaiveDatetime
-    """Start time of the event instance in event timezone."""
+    """Start datetime of the event instance in event timezone."""
 
     @staticmethod
     def map(prerecording: pm.Prerecording) -> "Prerecording":
