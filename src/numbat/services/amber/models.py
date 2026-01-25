@@ -12,7 +12,7 @@ class Object:
     """Name of the object."""
 
     modified: datetime | None
-    """Date and time when the object was last modified."""
+    """Datetime when the object was last modified."""
 
     size: int | None
     """Size of the object in bytes."""
@@ -49,7 +49,7 @@ class DownloadContent:
     """ETag of the object."""
 
     modified: datetime
-    """Date and time when the object was last modified."""
+    """Datetime when the object was last modified."""
 
     data: AsyncIterator[bytes]
     """Asynchronous iterator of data bytes."""

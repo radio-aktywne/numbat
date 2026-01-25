@@ -1,10 +1,10 @@
 from collections.abc import Sequence
-from datetime import datetime
 from enum import StrEnum
 from uuid import UUID
 
 from numbat.models.base import datamodel
 from numbat.services.amber import models as am
+from numbat.utils.time import NaiveDatetime
 
 DownloadContent = am.DownloadContent
 
@@ -25,8 +25,8 @@ class Prerecording:
     event: UUID
     """Identifier of the event."""
 
-    start: datetime
-    """Start time of the event instance in event timezone."""
+    start: NaiveDatetime
+    """Start datetime of the event instance in event timezone."""
 
 
 @datamodel
@@ -36,11 +36,11 @@ class ListRequest:
     event: UUID
     """Identifier of the event to list prerecordings for."""
 
-    after: datetime | None
-    """Only list prerecordings after this time (in event timezone)."""
+    after: NaiveDatetime | None
+    """Only list prerecordings after this datetime (in event timezone)."""
 
-    before: datetime | None
-    """Only list prerecordings before this date (in event timezone)."""
+    before: NaiveDatetime | None
+    """Only list prerecordings before this datetime (in event timezone)."""
 
     limit: int | None
     """Maximum number of prerecordings to return."""
@@ -76,8 +76,8 @@ class DownloadRequest:
     event: UUID
     """Identifier of the event."""
 
-    start: datetime
-    """Start time of the event instance in event timezone."""
+    start: NaiveDatetime
+    """Start datetime of the event instance in event timezone."""
 
 
 @datamodel
@@ -95,8 +95,8 @@ class UploadRequest:
     event: UUID
     """Identifier of the event."""
 
-    start: datetime
-    """Start time of the event instance in event timezone."""
+    start: NaiveDatetime
+    """Start datetime of the event instance in event timezone."""
 
     content: UploadContent
     """Content of the prerecording."""
@@ -114,8 +114,8 @@ class DeleteRequest:
     event: UUID
     """Identifier of the event."""
 
-    start: datetime
-    """Start time of the event instance in event timezone."""
+    start: NaiveDatetime
+    """Start datetime of the event instance in event timezone."""
 
 
 @datamodel

@@ -1,10 +1,12 @@
 from collections.abc import Generator, Sequence
 from contextlib import contextmanager
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, timedelta
 from http import HTTPStatus
 from typing import TYPE_CHECKING, cast
 from uuid import UUID
 from zoneinfo import ZoneInfo
+
+from numbat.utils.time import NaiveDatetime, isoparse
 
 if TYPE_CHECKING:
     from httpx import Response
@@ -36,7 +38,7 @@ class PrerecordingsService:
             raise e.BeaverError(str(ex)) from ex
 
     @contextmanager
-    def _handle_not_found(self, event: UUID, start: datetime) -> Generator[None]:
+    def _handle_not_found(self, event: UUID, start: NaiveDatetime) -> Generator[None]:
         try:
             yield
         except ae.NotFoundError as ex:
@@ -67,7 +69,7 @@ class PrerecordingsService:
         return ev
 
     async def _get_instance(
-        self, event: UUID, start: datetime
+        self, event: UUID, start: NaiveDatetime
     ) -> bm.EventInstance | None:
         mevent = await self._get_event(event)
 
@@ -75,8 +77,11 @@ class PrerecordingsService:
             return None
 
         tz = ZoneInfo(mevent.timezone)
-        utcstart = start.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=tz)
-        utcstart = utcstart.astimezone(UTC).replace(tzinfo=None)
+        utcstart = (
+            start.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=tz)
+            .astimezone(UTC)
+            .replace(tzinfo=None)
+        )
         utcend = utcstart + timedelta(days=1)
 
         req = bm.ScheduleListRequest(
@@ -112,10 +117,10 @@ class PrerecordingsService:
     def _make_prefix(self, event: UUID) -> str:
         return f"{event}/"
 
-    def _make_name(self, start: datetime) -> str:
+    def _make_name(self, start: NaiveDatetime) -> str:
         return start.isoformat()
 
-    def _make_key(self, event: UUID, start: datetime) -> str:
+    def _make_key(self, event: UUID, start: NaiveDatetime) -> str:
         prefix = self._make_prefix(event)
         name = self._make_name(start)
         return f"{prefix}{name}"
@@ -123,10 +128,10 @@ class PrerecordingsService:
     def _parse_prefix(self, prefix: str) -> UUID:
         return UUID(prefix[:-1])
 
-    def _parse_name(self, name: str) -> datetime:
-        return datetime.fromisoformat(name)
+    def _parse_name(self, name: str) -> NaiveDatetime:
+        return isoparse(name)
 
-    def _parse_key(self, key: str) -> tuple[UUID, datetime]:
+    def _parse_key(self, key: str) -> tuple[UUID, NaiveDatetime]:
         split = key.find("/")
         prefix, name = key[: split + 1], key[split + 1 :]
         event = self._parse_prefix(prefix)
@@ -175,8 +180,8 @@ class PrerecordingsService:
     def _list_filter_prerecordings(
         self,
         prerecordings: Sequence[m.Prerecording],
-        after: datetime | None,
-        before: datetime | None,
+        after: NaiveDatetime | None,
+        before: NaiveDatetime | None,
     ) -> Sequence[m.Prerecording]:
         if after is not None:
             prerecordings = [
