@@ -463,10 +463,10 @@ class ScheduleListRequest:
     """Request to list schedules."""
 
     start: ScheduleListRequestStart
-    """Start time in UTC to filter events instances."""
+    """Start datetime in UTC to filter events instances."""
 
     end: ScheduleListRequestEnd
-    """End time in UTC to filter events instances."""
+    """End datetime in UTC to filter events instances."""
 
     limit: ScheduleListRequestLimit
     """Maximum number of schedules to return."""

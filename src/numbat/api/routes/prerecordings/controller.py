@@ -60,13 +60,13 @@ class Controller(BaseController):
         after: Annotated[
             m.ListRequestAfter,
             Parameter(
-                description="Only list prerecordings after this time (in event timezone).",
+                description="Only list prerecordings after this datetime (in event timezone).",
             ),
         ] = None,
         before: Annotated[
             m.ListRequestBefore,
             Parameter(
-                description="Only list prerecordings before this time (in event timezone).",
+                description="Only list prerecordings before this datetime (in event timezone).",
             ),
         ] = None,
         limit: Annotated[
@@ -155,7 +155,7 @@ class Controller(BaseController):
         start: Annotated[
             str,
             Parameter(
-                description="Start time of the event instance in event timezone.",
+                description="Start datetime of the event instance in event timezone.",
             ),
         ],
     ) -> Stream:
@@ -236,7 +236,7 @@ class Controller(BaseController):
         start: Annotated[
             str,
             Parameter(
-                description="Start time of the event instance in event timezone.",
+                description="Start datetime of the event instance in event timezone.",
             ),
         ],
     ) -> Response[None]:
@@ -295,7 +295,7 @@ class Controller(BaseController):
         start: Annotated[
             m.UploadRequestStart,
             Parameter(
-                description="Start time of the event instance in event timezone.",
+                description="Start datetime of the event instance in event timezone.",
             ),
         ],
         content_type: Annotated[
@@ -358,7 +358,7 @@ class Controller(BaseController):
         start: Annotated[
             str,
             Parameter(
-                description="Start time of the event instance in event timezone.",
+                description="Start datetime of the event instance in event timezone.",
             ),
         ],
     ) -> Response[None]:

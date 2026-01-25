@@ -102,10 +102,10 @@ class ListRequest:
     """Identifier of the event to list prerecordings for."""
 
     after: ListRequestAfter
-    """Only list prerecordings after this time (in event timezone)."""
+    """Only list prerecordings after this datetime (in event timezone)."""
 
     before: ListRequestBefore
-    """Only list prerecordings before this date (in event timezone)."""
+    """Only list prerecordings before this datetime (in event timezone)."""
 
     limit: ListRequestLimit
     """Maximum number of prerecordings to return."""
@@ -133,7 +133,7 @@ class DownloadRequest:
     """Identifier of the event."""
 
     start: DownloadRequestStart
-    """Start time of the event instance in event timezone."""
+    """Start datetime of the event instance in event timezone."""
 
 
 @datamodel
@@ -150,7 +150,7 @@ class DownloadResponse:
     """ETag of the prerecording data."""
 
     modified: DownloadResponseModified
-    """Date and time when the prerecording was last modified."""
+    """Datetime when the prerecording was last modified."""
 
     data: DownloadResponseData
     """Data of the prerecording."""
@@ -164,7 +164,7 @@ class HeadDownloadRequest:
     """Identifier of the event."""
 
     start: HeadDownloadRequestStart
-    """Start time of the event instance in event timezone."""
+    """Start datetime of the event instance in event timezone."""
 
 
 @datamodel
@@ -181,7 +181,7 @@ class HeadDownloadResponse:
     """ETag of the prerecording data."""
 
     modified: HeadDownloadResponseModified
-    """Date and time when the prerecording was last modified."""
+    """Datetime when the prerecording was last modified."""
 
 
 @datamodel
@@ -192,7 +192,7 @@ class UploadRequest:
     """Identifier of the event."""
 
     start: UploadRequestStart
-    """Start time of the event instance in event timezone."""
+    """Start datetime of the event instance in event timezone."""
 
     type: UploadRequestType
     """Type of the prerecording data."""
@@ -214,7 +214,7 @@ class DeleteRequest:
     """Identifier of the event."""
 
     start: DeleteRequestStart
-    """Start time of the event instance in event timezone."""
+    """Start datetime of the event instance in event timezone."""
 
 
 @datamodel
