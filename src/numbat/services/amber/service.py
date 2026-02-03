@@ -51,7 +51,7 @@ class AmberService:
         try:
             yield
         except MinioException as ex:
-            raise e.ServiceError(str(ex)) from ex
+            raise e.ServiceError from ex
 
     @contextmanager
     def _handle_not_found(self, name: str) -> Generator[None]:
@@ -69,73 +69,46 @@ class AmberService:
                 for obj in objects:
                     yield self._map_object(obj)
 
-        bucket = self._bucket
-        prefix = request.prefix
-        recursive = request.recursive
-
         with self._handle_errors():
             objects = await asyncio.to_thread(
                 self._client.list_objects,
-                bucket_name=bucket,
-                prefix=prefix,
-                recursive=recursive,
+                bucket_name=self._bucket,
+                prefix=request.prefix,
+                recursive=request.recursive,
             )
 
-        objects = asyncify.iterator(_objects(objects))
-
-        return m.ListResponse(
-            objects=objects,
-        )
+        return m.ListResponse(objects=asyncify.iterator(_objects(objects)))
 
     async def upload(self, request: m.UploadRequest) -> m.UploadResponse:
         """Upload an object."""
-        bucket = self._bucket
-        name = request.name
-        data = ReadableIterator(syncify.iterator(request.content.data))
-        length = -1
-        content_type = request.content.type
-        chunk = request.chunk
-
         with self._handle_errors():
             await asyncio.to_thread(
                 self._client.put_object,
-                bucket_name=bucket,
-                object_name=name,
-                data=cast("BinaryIO", data),
-                length=length,
-                content_type=content_type,
-                part_size=chunk,
+                bucket_name=self._bucket,
+                object_name=request.name,
+                data=cast(
+                    "BinaryIO", ReadableIterator(syncify.iterator(request.content.data))
+                ),
+                length=-1,
+                content_type=request.content.type,
+                part_size=request.chunk,
             )
 
-        req = m.GetRequest(
-            name=name,
-        )
+        get_request = m.GetRequest(name=request.name)
+        get_response = await self.get(get_request)
 
-        res = await self.get(req)
-
-        obj = res.object
-
-        return m.UploadResponse(
-            object=obj,
-        )
+        return m.UploadResponse(object=get_response.object)
 
     async def get(self, request: m.GetRequest) -> m.GetResponse:
         """Get an object."""
-        bucket = self._bucket
-        name = request.name
-
-        with self._handle_errors(), self._handle_not_found(name):
+        with self._handle_errors(), self._handle_not_found(request.name):
             obj = await asyncio.to_thread(
                 self._client.stat_object,
-                bucket_name=bucket,
-                object_name=name,
+                bucket_name=self._bucket,
+                object_name=request.name,
             )
 
-        obj = self._map_object(obj)
-
-        return m.GetResponse(
-            object=obj,
-        )
+        return m.GetResponse(object=self._map_object(obj))
 
     async def download(self, request: m.DownloadRequest) -> m.DownloadResponse:
         """Download an object."""
@@ -148,87 +121,52 @@ class AmberService:
                     res.close()
                     res.release_conn()
 
-        bucket = self._bucket
-        name = request.name
-
-        with self._handle_errors(), self._handle_not_found(name):
-            res = await asyncio.to_thread(
+        with self._handle_errors(), self._handle_not_found(request.name):
+            get_object_response = await asyncio.to_thread(
                 self._client.get_object,
-                bucket_name=bucket,
-                object_name=name,
+                bucket_name=self._bucket,
+                object_name=request.name,
             )
 
-        content_type = res.headers["Content-Type"]
-        size = int(res.headers["Content-Length"])
-        tag = res.headers["ETag"]
-        modified = httpparse(res.headers["Last-Modified"])
-
-        chunk = request.chunk
-        data = asyncify.iterator(_data(res, chunk))
-
-        content = m.DownloadContent(
-            type=content_type,
-            size=size,
-            tag=tag,
-            modified=modified,
-            data=data,
-        )
         return m.DownloadResponse(
-            content=content,
+            content=m.DownloadContent(
+                type=get_object_response.headers["Content-Type"],
+                size=int(get_object_response.headers["Content-Length"]),
+                tag=get_object_response.headers["ETag"],
+                modified=httpparse(get_object_response.headers["Last-Modified"]),
+                data=asyncify.iterator(_data(get_object_response, request.chunk)),
+            )
         )
 
     async def copy(self, request: m.CopyRequest) -> m.CopyResponse:
         """Copy an object."""
-        bucket = self._bucket
-        source = request.source
-        destination = request.destination
-
-        with self._handle_errors(), self._handle_not_found(source):
+        with self._handle_errors(), self._handle_not_found(request.source):
             await asyncio.to_thread(
                 self._client.copy_object,
-                bucket_name=bucket,
-                object_name=destination,
-                source=CopySource(
-                    bucket_name=bucket,
-                    object_name=source,
-                ),
+                bucket_name=self._bucket,
+                object_name=request.destination,
+                source=CopySource(bucket_name=self._bucket, object_name=request.source),
             )
 
-        req = m.GetRequest(
-            name=destination,
-        )
+        get_request = m.GetRequest(name=request.destination)
+        get_response = await self.get(get_request)
 
-        res = await self.get(req)
-
-        obj = res.object
-
-        return m.CopyResponse(
-            object=obj,
-        )
+        return m.CopyResponse(object=get_response.object)
 
     async def delete(self, request: m.DeleteRequest) -> m.DeleteResponse:
         """Delete an object."""
-        bucket = self._bucket
-        name = request.name
+        get_request = m.GetRequest(name=request.name)
 
-        req = m.GetRequest(
-            name=name,
-        )
+        get_response = await self.get(get_request)
 
-        res = await self.get(req)
+        if get_response.object is None:
+            raise e.NotFoundError(request.name)
 
-        obj = res.object
-
-        if obj is None:
-            raise e.NotFoundError(name)
-
-        with self._handle_errors(), self._handle_not_found(name):
+        with self._handle_errors(), self._handle_not_found(request.name):
             await asyncio.to_thread(
                 self._client.remove_object,
-                bucket_name=bucket,
-                object_name=name,
+                bucket_name=self._bucket,
+                object_name=request.name,
             )
 
-        return m.DeleteResponse(
-            object=obj,
-        )
+        return m.DeleteResponse(object=get_response.object)

@@ -15,7 +15,7 @@ from numbat.api.exceptions import BadRequestException, NotFoundException
 from numbat.api.routes.prerecordings import errors as e
 from numbat.api.routes.prerecordings import models as m
 from numbat.api.routes.prerecordings.service import Service
-from numbat.api.validator import Validator
+from numbat.models.base import Jsonable, Serializable
 from numbat.services.prerecordings.service import PrerecordingsService
 from numbat.state import State
 from numbat.utils.time import httpstringify
@@ -26,10 +26,7 @@ class DependenciesBuilder:
 
     async def _build_service(self, state: State) -> Service:
         return Service(
-            prerecordings=PrerecordingsService(
-                amber=state.amber,
-                beaver=state.beaver,
-            )
+            prerecordings=PrerecordingsService(amber=state.amber, beaver=state.beaver)
         )
 
     def build(self) -> Mapping[str, Provide]:
@@ -45,72 +42,70 @@ class Controller(BaseController):
     dependencies = DependenciesBuilder().build()
 
     @handlers.get(
-        "/{event:uuid}",
+        "/{event:str}",
         summary="List prerecordings",
     )
     async def list(  # noqa: PLR0913
         self,
         service: Service,
         event: Annotated[
-            m.ListRequestEvent,
+            Serializable[m.ListRequestEvent],
             Parameter(
                 description="Identifier of the event to list prerecordings for.",
             ),
         ],
         after: Annotated[
-            m.ListRequestAfter,
+            Jsonable[m.ListRequestAfter] | None,
             Parameter(
                 description="Only list prerecordings after this datetime (in event timezone).",
             ),
         ] = None,
         before: Annotated[
-            m.ListRequestBefore,
+            Jsonable[m.ListRequestBefore] | None,
             Parameter(
                 description="Only list prerecordings before this datetime (in event timezone).",
             ),
         ] = None,
         limit: Annotated[
-            m.ListRequestLimit,
+            Jsonable[m.ListRequestLimit] | None,
             Parameter(
-                description="Maximum number of prerecordings to return.",
+                description="Maximum number of prerecordings to return. Default is 10.",
             ),
-        ] = 10,
+        ] = None,
         offset: Annotated[
-            m.ListRequestOffset,
+            Jsonable[m.ListRequestOffset] | None,
             Parameter(
                 description="Number of prerecordings to skip.",
             ),
         ] = None,
         order: Annotated[
-            m.ListRequestOrder,
+            Jsonable[m.ListRequestOrder] | None,
             Parameter(
                 description="Order to apply to the results.",
             ),
         ] = None,
-    ) -> Response[m.ListResponseResults]:
+    ) -> Response[Serializable[m.ListResponseResults]]:
         """List prerecordings."""
-        req = m.ListRequest(
-            event=event,
-            after=after,
-            before=before,
-            limit=limit,
-            offset=offset,
-            order=order,
+        request = m.ListRequest(
+            event=event.root,
+            after=after.root if after else None,
+            before=before.root if before else None,
+            limit=limit.root if limit else 10,
+            offset=offset.root if offset else None,
+            order=order.root if order else None,
         )
 
         try:
-            res = await service.list(req)
+            response = await service.list(request)
         except e.BadEventTypeError as ex:
             raise BadRequestException from ex
         except e.EventNotFoundError as ex:
             raise NotFoundException from ex
 
-        results = res.results
-
-        return Response(results)
+        return Response(Serializable(response.results))
 
     @handlers.get(
-        "/{event:uuid}/{start:str}",
+        "/{event:str}/{start:str}",
         summary="Download prerecording",
         response_headers=[
             ResponseHeader(
@@ -147,28 +142,23 @@ class Controller(BaseController):
         self,
         service: Service,
         event: Annotated[
-            m.DownloadRequestEvent,
+            Serializable[m.DownloadRequestEvent],
             Parameter(
                 description="Identifier of the event.",
             ),
         ],
         start: Annotated[
-            str,
+            Serializable[m.DownloadRequestStart],
             Parameter(
                 description="Start datetime of the event instance in event timezone.",
             ),
         ],
     ) -> Stream:
         """Download a prerecording."""
-        parsed_start = Validator[m.DownloadRequestStart].validate_object(start)
-
-        req = m.DownloadRequest(
-            event=event,
-            start=parsed_start,
-        )
+        request = m.DownloadRequest(event=event.root, start=start.root)
 
         try:
-            res = await service.download(req)
+            response = await service.download(request)
         except e.BadEventTypeError as ex:
             raise BadRequestException from ex
         except e.InstanceNotFoundError as ex:
@@ -176,25 +166,18 @@ class Controller(BaseController):
         except e.PrerecordingNotFoundError as ex:
             raise NotFoundException from ex
 
-        content_type = res.type
-        size = res.size
-        tag = res.tag
-        modified = res.modified
-        data = res.data
-
-        headers = {
-            "Content-Type": content_type,
-            "Content-Length": str(size),
-            "ETag": tag,
-            "Last-Modified": httpstringify(modified),
-        }
         return Stream(
-            data,
-            headers=headers,
+            response.data,
+            headers={
+                "Content-Type": response.type,
+                "Content-Length": str(response.size),
+                "ETag": response.tag,
+                "Last-Modified": httpstringify(response.modified),
+            },
         )
 
     @handlers.head(
-        "/{event:uuid}/{start:str}",
+        "/{event:str}/{start:str}",
         summary="Download prerecording headers",
         response_headers=[
             ResponseHeader(
@@ -228,28 +211,23 @@ class Controller(BaseController):
         self,
         service: Service,
         event: Annotated[
-            m.HeadDownloadRequestEvent,
+            Serializable[m.HeadDownloadRequestEvent],
             Parameter(
                 description="Identifier of the event.",
             ),
         ],
         start: Annotated[
-            str,
+            Serializable[m.HeadDownloadRequestStart],
             Parameter(
                 description="Start datetime of the event instance in event timezone.",
             ),
         ],
     ) -> Response[None]:
         """Download prerecording headers."""
-        parsed_start = Validator[m.HeadDownloadRequestStart].validate_object(start)
-
-        req = m.HeadDownloadRequest(
-            event=event,
-            start=parsed_start,
-        )
+        request = m.HeadDownloadRequest(event=event.root, start=start.root)
 
         try:
-            res = await service.headdownload(req)
+            response = await service.headdownload(request)
         except e.BadEventTypeError as ex:
             raise BadRequestException from ex
         except e.InstanceNotFoundError as ex:
@@ -257,24 +235,18 @@ class Controller(BaseController):
         except e.PrerecordingNotFoundError as ex:
             raise NotFoundException from ex
 
-        content_type = res.type
-        size = res.size
-        tag = res.tag
-        modified = res.modified
-
-        headers = {
-            "Content-Type": content_type,
-            "Content-Length": str(size),
-            "ETag": tag,
-            "Last-Modified": httpstringify(modified),
-        }
         return Response(
             None,
-            headers=headers,
+            headers={
+                "Content-Type": response.type,
+                "Content-Length": str(response.size),
+                "ETag": response.tag,
+                "Last-Modified": httpstringify(response.modified),
+            },
         )
 
     @handlers.put(
-        "/{event:uuid}/{start:str}",
+        "/{event:str}/{start:str}",
         summary="Upload prerecording",
         status_code=HTTP_204_NO_CONTENT,
         responses={
@@ -287,19 +259,19 @@ class Controller(BaseController):
         self,
         service: Service,
         event: Annotated[
-            m.UploadRequestEvent,
+            Serializable[m.UploadRequestEvent],
             Parameter(
                 description="Identifier of the event.",
             ),
         ],
         start: Annotated[
-            m.UploadRequestStart,
+            Serializable[m.UploadRequestStart],
             Parameter(
                 description="Start datetime of the event instance in event timezone.",
             ),
         ],
         content_type: Annotated[
-            m.UploadRequestType,
+            Jsonable[m.UploadRequestType],
             Parameter(
                 header="Content-Type",
                 description="Type of the prerecording data.",
@@ -319,12 +291,10 @@ class Controller(BaseController):
 
                 yield chunk
 
-        parsed_start = Validator[m.UploadRequestStart].validate_object(start)
-
         req = m.UploadRequest(
-            event=event,
-            start=parsed_start,
-            type=content_type,
+            event=event.root,
+            start=start.root,
+            type=content_type.root,
             data=_stream(request),
         )
 
@@ -338,7 +308,7 @@ class Controller(BaseController):
         return Response(None)
 
     @handlers.delete(
-        "/{event:uuid}/{start:str}",
+        "/{event:str}/{start:str}",
         summary="Delete prerecording",
         responses={
             HTTP_204_NO_CONTENT: ResponseSpec(
@@ -350,28 +320,23 @@ class Controller(BaseController):
         self,
         service: Service,
         event: Annotated[
-            m.DeleteRequestEvent,
+            Serializable[m.DeleteRequestEvent],
             Parameter(
                 description="Identifier of the event.",
             ),
         ],
         start: Annotated[
-            str,
+            Serializable[m.DeleteRequestStart],
             Parameter(
                 description="Start datetime of the event instance in event timezone.",
             ),
         ],
     ) -> Response[None]:
         """Delete a prerecording."""
-        parsed_start = Validator[m.DeleteRequestStart].validate_object(start)
-
-        req = m.DeleteRequest(
-            event=event,
-            start=parsed_start,
-        )
+        request = m.DeleteRequest(event=event.root, start=start.root)
 
         try:
-            await service.delete(req)
+            await service.delete(request)
         except e.BadEventTypeError as ex:
             raise BadRequestException from ex
         except e.InstanceNotFoundError as ex:

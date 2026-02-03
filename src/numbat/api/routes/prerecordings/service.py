@@ -19,146 +19,95 @@ class Service:
         try:
             yield
         except pe.EventNotFoundError as ex:
-            raise e.EventNotFoundError(str(ex)) from ex
+            raise e.EventNotFoundError from ex
         except pe.BadEventTypeError as ex:
-            raise e.BadEventTypeError(str(ex)) from ex
+            raise e.BadEventTypeError from ex
         except pe.InstanceNotFoundError as ex:
-            raise e.InstanceNotFoundError(str(ex)) from ex
+            raise e.InstanceNotFoundError from ex
         except pe.PrerecordingNotFoundError as ex:
-            raise e.PrerecordingNotFoundError(str(ex)) from ex
+            raise e.PrerecordingNotFoundError from ex
         except pe.BeaverError as ex:
-            raise e.BeaverError(str(ex)) from ex
+            raise e.BeaverError from ex
         except pe.AmberError as ex:
-            raise e.AmberError(str(ex)) from ex
+            raise e.AmberError from ex
         except pe.ServiceError as ex:
-            raise e.ServiceError(str(ex)) from ex
+            raise e.ServiceError from ex
 
     async def list(self, request: m.ListRequest) -> m.ListResponse:
         """List prerecordings."""
-        event = request.event
-        after = request.after
-        before = request.before
-        limit = request.limit
-        offset = request.offset
-        order = request.order
-
-        req = pm.ListRequest(
-            event=event,
-            after=after,
-            before=before,
-            limit=limit,
-            offset=offset,
-            order=order,
+        list_request = pm.ListRequest(
+            event=request.event,
+            after=request.after,
+            before=request.before,
+            limit=request.limit,
+            offset=request.offset,
+            order=request.order,
         )
 
         with self._handle_errors():
-            res = await self._prerecordings.list(req)
+            list_response = await self._prerecordings.list(list_request)
 
-        count = res.count
-        prerecordings = res.prerecordings
-
-        prerecordings = [
-            m.Prerecording.map(prerecording) for prerecording in prerecordings
-        ]
-        results = m.PrerecordingList(
-            count=count,
-            limit=limit,
-            offset=offset,
-            prerecordings=prerecordings,
-        )
         return m.ListResponse(
-            results=results,
+            results=m.PrerecordingList(
+                count=list_response.count,
+                limit=request.limit,
+                offset=request.offset,
+                prerecordings=[
+                    m.Prerecording.map(prerecording)
+                    for prerecording in list_response.prerecordings
+                ],
+            )
         )
 
     async def download(self, request: m.DownloadRequest) -> m.DownloadResponse:
         """Download a prerecording."""
-        event = request.event
-        start = request.start
-
-        req = pm.DownloadRequest(
-            event=event,
-            start=start,
-        )
+        download_request = pm.DownloadRequest(event=request.event, start=request.start)
 
         with self._handle_errors():
-            res = await self._prerecordings.download(req)
+            download_response = await self._prerecordings.download(download_request)
 
-        content = res.content
-
-        content_type = content.type
-        size = content.size
-        tag = content.tag
-        modified = content.modified
-        data = content.data
         return m.DownloadResponse(
-            type=content_type,
-            size=size,
-            tag=tag,
-            modified=modified,
-            data=data,
+            type=download_response.content.type,
+            size=download_response.content.size,
+            tag=download_response.content.tag,
+            modified=download_response.content.modified,
+            data=download_response.content.data,
         )
 
     async def headdownload(
         self, request: m.HeadDownloadRequest
     ) -> m.HeadDownloadResponse:
         """Download prerecording headers."""
-        event = request.event
-        start = request.start
-
-        req = pm.DownloadRequest(
-            event=event,
-            start=start,
-        )
+        download_request = pm.DownloadRequest(event=request.event, start=request.start)
 
         with self._handle_errors():
-            res = await self._prerecordings.download(req)
+            download_response = await self._prerecordings.download(download_request)
 
-        content = res.content
-
-        content_type = content.type
-        size = content.size
-        tag = content.tag
-        modified = content.modified
         return m.HeadDownloadResponse(
-            type=content_type,
-            size=size,
-            tag=tag,
-            modified=modified,
+            type=download_response.content.type,
+            size=download_response.content.size,
+            tag=download_response.content.tag,
+            modified=download_response.content.modified,
         )
 
     async def upload(self, request: m.UploadRequest) -> m.UploadResponse:
         """Upload a prerecording."""
-        event = request.event
-        start = request.start
-        content_type = request.type
-        data = request.data
-
-        content = pm.UploadContent(
-            type=content_type,
-            data=data,
-        )
-        req = pm.UploadRequest(
-            event=event,
-            start=start,
-            content=content,
+        upload_request = pm.UploadRequest(
+            event=request.event,
+            start=request.start,
+            content=pm.UploadContent(type=request.type, data=request.data),
         )
 
         with self._handle_errors():
-            await self._prerecordings.upload(req)
+            await self._prerecordings.upload(upload_request)
 
         return m.UploadResponse()
 
     async def delete(self, request: m.DeleteRequest) -> m.DeleteResponse:
         """Delete a prerecording."""
-        event = request.event
-        start = request.start
-
-        req = pm.DeleteRequest(
-            event=event,
-            start=start,
-        )
+        delete_request = pm.DeleteRequest(event=request.event, start=request.start)
 
         with self._handle_errors():
-            await self._prerecordings.delete(req)
+            await self._prerecordings.delete(delete_request)
 
         return m.DeleteResponse()

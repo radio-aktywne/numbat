@@ -1,10 +1,10 @@
 from collections.abc import Sequence
+from datetime import datetime
 from enum import StrEnum
 from uuid import UUID
 
 from numbat.models.base import datamodel
 from numbat.services.amber import models as am
-from numbat.utils.time import NaiveDatetime
 
 DownloadContent = am.DownloadContent
 
@@ -25,7 +25,7 @@ class Prerecording:
     event: UUID
     """Identifier of the event."""
 
-    start: NaiveDatetime
+    start: datetime
     """Start datetime of the event instance in event timezone."""
 
 
@@ -36,10 +36,10 @@ class ListRequest:
     event: UUID
     """Identifier of the event to list prerecordings for."""
 
-    after: NaiveDatetime | None
+    after: datetime | None
     """Only list prerecordings after this datetime (in event timezone)."""
 
-    before: NaiveDatetime | None
+    before: datetime | None
     """Only list prerecordings before this datetime (in event timezone)."""
 
     limit: int | None
@@ -76,7 +76,7 @@ class DownloadRequest:
     event: UUID
     """Identifier of the event."""
 
-    start: NaiveDatetime
+    start: datetime
     """Start datetime of the event instance in event timezone."""
 
 
@@ -95,7 +95,7 @@ class UploadRequest:
     event: UUID
     """Identifier of the event."""
 
-    start: NaiveDatetime
+    start: datetime
     """Start datetime of the event instance in event timezone."""
 
     content: UploadContent
@@ -114,7 +114,7 @@ class DeleteRequest:
     event: UUID
     """Identifier of the event."""
 
-    start: NaiveDatetime
+    start: datetime
     """Start datetime of the event instance in event timezone."""
 
 

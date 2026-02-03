@@ -1,6 +1,7 @@
+from datetime import datetime
 from uuid import UUID
 
-from numbat.utils.time import NaiveDatetime, isostringify
+from numbat.utils.time import isostringify
 
 
 class ServiceError(Exception):
@@ -17,25 +18,25 @@ class BadEventTypeError(ServiceError):
 class EventNotFoundError(ServiceError):
     """Raised when event is not found."""
 
-    def __init__(self, event: UUID) -> None:
-        super().__init__(f"Prerecorded event not found for id {event}.")
+    def __init__(self, event_id: UUID) -> None:
+        super().__init__(f"Prerecorded event not found for id {event_id}.")
 
 
 class InstanceNotFoundError(ServiceError):
     """Raised when instance is not found."""
 
-    def __init__(self, event: UUID, start: NaiveDatetime) -> None:
+    def __init__(self, event_id: UUID, start: datetime) -> None:
         super().__init__(
-            f"Instance not found for prerecorded event {event} starting at {isostringify(start)}."
+            f"Instance not found for prerecorded event {event_id} starting at {isostringify(start)}."
         )
 
 
 class PrerecordingNotFoundError(ServiceError):
     """Raised when prerecording is not found."""
 
-    def __init__(self, event: UUID, start: NaiveDatetime) -> None:
+    def __init__(self, event_id: UUID, start: datetime) -> None:
         super().__init__(
-            f"Prerecording not found for instance of prerecorded event {event} starting at {isostringify(start)}."
+            f"Prerecording not found for instance of prerecorded event {event_id} starting at {isostringify(start)}."
         )
 
 
