@@ -26,10 +26,10 @@ class Service:
             raise e.InstanceNotFoundError from ex
         except pe.PrerecordingNotFoundError as ex:
             raise e.PrerecordingNotFoundError from ex
-        except pe.BeaverError as ex:
-            raise e.BeaverError from ex
         except pe.AmberError as ex:
             raise e.AmberError from ex
+        except pe.BeaverError as ex:
+            raise e.BeaverError from ex
         except pe.ServiceError as ex:
             raise e.ServiceError from ex
 

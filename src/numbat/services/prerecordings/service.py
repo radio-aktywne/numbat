@@ -12,7 +12,7 @@ from numbat.services.beaver import models as bm
 from numbat.services.beaver.service import BeaverService
 from numbat.services.prerecordings import errors as e
 from numbat.services.prerecordings import models as m
-from numbat.utils.time import isoparse
+from numbat.utils.time import isoparse, isostringify
 
 
 class PrerecordingsService:
@@ -98,7 +98,7 @@ class PrerecordingsService:
         return f"{event}/"
 
     def _make_name(self, start: datetime) -> str:
-        return start.isoformat()
+        return isostringify(start)
 
     def _make_key(self, event: UUID, start: datetime) -> str:
         prefix = self._make_prefix(event)

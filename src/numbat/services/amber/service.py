@@ -156,7 +156,6 @@ class AmberService:
     async def delete(self, request: m.DeleteRequest) -> m.DeleteResponse:
         """Delete an object."""
         get_request = m.GetRequest(name=request.name)
-
         get_response = await self.get(get_request)
 
         if get_response.object is None:
