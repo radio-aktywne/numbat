@@ -45,16 +45,6 @@ class AppBuilder:
             PydanticPlugin(),
         ]
 
-    def _build_amber(self) -> AmberService:
-        return AmberService(
-            config=self._config.amber,
-        )
-
-    def _build_beaver(self) -> BeaverService:
-        return BeaverService(
-            config=self._config.beaver,
-        )
-
     def _build_initial_state(self) -> State:
         return State(
             {

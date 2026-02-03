@@ -50,7 +50,7 @@ class Serializable[T](RootModel[T]):
 
     @classmethod
     def __get_title__(cls) -> str:
-        return cls.__get_annotation__().__name__
+        return getattr(cls.__get_annotation__(), "__name__", cls.__name__)
 
     @override
     @classmethod

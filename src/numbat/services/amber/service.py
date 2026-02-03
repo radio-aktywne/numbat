@@ -158,9 +158,6 @@ class AmberService:
         get_request = m.GetRequest(name=request.name)
         get_response = await self.get(get_request)
 
-        if get_response.object is None:
-            raise e.NotFoundError(request.name)
-
         with self._handle_errors(), self._handle_not_found(request.name):
             await asyncio.to_thread(
                 self._client.remove_object,
