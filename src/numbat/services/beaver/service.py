@@ -29,14 +29,16 @@ class BaseService(Gracy[Endpoint]):
 class EventsNamespace(GracyNamespace[Endpoint]):
     """Namespace for beaver events endpoint."""
 
-    async def mget(self, request: m.EventsGetRequest) -> m.EventsGetResponse:
+    async def get_by_id(self, request: m.EventsGetRequest) -> m.EventsGetResponse:
         """Get an event by ID."""
         response = await self.get(
             f"{Endpoint.EVENTS}/{Serializable(request.id).model_dump()}"
         )
 
         return m.EventsGetResponse(
-            event=Serializable[m.Event].model_validate_json(response.content).root
+            event=Serializable[m.EventsGetResponseEvent]
+            .model_validate_json(response.content)
+            .root
         )
 
 
@@ -44,7 +46,7 @@ class ScheduleNamespace(GracyNamespace[Endpoint]):
     """Namespace for beaver schedule endpoint."""
 
     async def list(self, request: m.ScheduleListRequest) -> m.ScheduleListResponse:
-        """List schedules."""
+        """List event schedules with instances between two dates."""
         params = {}
         if request.start is not None:
             params["start"] = Jsonable(request.start).model_dump_json()
@@ -56,7 +58,7 @@ class ScheduleNamespace(GracyNamespace[Endpoint]):
         response = await self.get(Endpoint.SCHEDULE, params=params)
 
         return m.ScheduleListResponse(
-            results=Serializable[m.ScheduleList]
+            results=Serializable[m.ScheduleListResponseResults]
             .model_validate_json(response.content)
             .root
         )

@@ -43,7 +43,9 @@ class PrerecordingsService:
 
         with self._handle_errors():
             try:
-                events_get_response = await self._beaver.events.mget(events_get_request)
+                events_get_response = await self._beaver.events.get_by_id(
+                    events_get_request
+                )
             except be.ResponseError as ex:
                 if ex.response.status_code == HTTPStatus.NOT_FOUND:
                     return None
