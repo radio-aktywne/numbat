@@ -1,5 +1,6 @@
 from collections.abc import AsyncIterator, Sequence
 from datetime import datetime
+from typing import Self
 from uuid import UUID
 
 from numbat.models.base import SerializableModel, datamodel
@@ -16,10 +17,10 @@ class Prerecording(SerializableModel):
     start: NaiveDatetime
     """Start datetime of the event instance in event timezone."""
 
-    @staticmethod
-    def map(prerecording: pm.Prerecording) -> "Prerecording":
+    @classmethod
+    def map(cls, prerecording: pm.Prerecording) -> Self:
         """Map to internal representation."""
-        return Prerecording(event=prerecording.event, start=prerecording.start)
+        return cls(event=prerecording.event, start=prerecording.start)
 
 
 class PrerecordingList(SerializableModel):
