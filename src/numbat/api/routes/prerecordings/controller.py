@@ -1,12 +1,21 @@
 from collections.abc import AsyncGenerator, Mapping
-from typing import Annotated
+from dataclasses import dataclass
+from typing import Annotated, cast
 
 from litestar import Controller as BaseController
 from litestar import Request, handlers
 from litestar.datastructures import ResponseHeader
 from litestar.di import Provide
 from litestar.exceptions import InternalServerException
-from litestar.openapi import ResponseSpec
+from litestar.openapi.spec import (
+    OpenAPIFormat,
+    OpenAPIMediaType,
+    OpenAPIResponse,
+    OpenAPIType,
+    Operation,
+    RequestBody,
+    Schema,
+)
 from litestar.params import Parameter
 from litestar.response import Response, Stream
 from litestar.status_codes import HTTP_200_OK, HTTP_204_NO_CONTENT
@@ -19,6 +28,40 @@ from numbat.models.base import Jsonable, Serializable
 from numbat.services.prerecordings.service import PrerecordingsService
 from numbat.state import State
 from numbat.utils.time import httpstringify
+
+
+@dataclass
+class DownloadOperation(Operation):
+    """OpenAPI Operation for downloading a prerecording."""
+
+    def __post_init__(self) -> None:
+        if (
+            self.responses
+            and str(HTTP_200_OK) in self.responses
+            and (response := self.responses[str(HTTP_200_OK)])
+            and isinstance(response, OpenAPIResponse)
+            and (content := response.content)
+            and "*/*" in content
+            and (schema := content["*/*"].schema)
+            and isinstance(schema, Schema)
+        ):
+            schema.type = OpenAPIType.STRING
+            schema.format = OpenAPIFormat.BINARY
+
+
+@dataclass
+class UploadOperation(Operation):
+    """OpenAPI Operation for uploading a prerecording."""
+
+    def __post_init__(self) -> None:
+        self.request_body = RequestBody(
+            content={
+                "*/*": OpenAPIMediaType(
+                    schema=Schema(type=OpenAPIType.STRING, format=OpenAPIFormat.BINARY)
+                )
+            },
+            required=True,
+        )
 
 
 class DependenciesBuilder:
@@ -44,6 +87,7 @@ class Controller(BaseController):
     @handlers.get(
         "/{event:str}",
         summary="List prerecordings",
+        raises=[BadRequestException, NotFoundException],
     )
     async def list(  # noqa: PLR0913
         self,
@@ -107,36 +151,32 @@ class Controller(BaseController):
     @handlers.get(
         "/{event:str}/{start:str}",
         summary="Download prerecording",
+        status_code=HTTP_200_OK,
         response_headers=[
             ResponseHeader(
                 name="Content-Type",
-                description="Content type.",
+                required=True,
                 documentation_only=True,
             ),
             ResponseHeader(
                 name="Content-Length",
-                description="Content length.",
+                required=True,
                 documentation_only=True,
             ),
             ResponseHeader(
                 name="ETag",
-                description="Entity tag.",
+                required=True,
                 documentation_only=True,
             ),
             ResponseHeader(
                 name="Last-Modified",
-                description="Last modified.",
+                required=True,
                 documentation_only=True,
             ),
         ],
-        responses={
-            HTTP_200_OK: ResponseSpec(
-                Stream,
-                description="Request fulfilled, stream follows",
-                generate_examples=False,
-                media_type="*/*",
-            )
-        },
+        media_type="*/*",
+        raises=[BadRequestException, NotFoundException],
+        operation_class=DownloadOperation,
     )
     async def download(
         self,
@@ -179,33 +219,30 @@ class Controller(BaseController):
     @handlers.head(
         "/{event:str}/{start:str}",
         summary="Download prerecording headers",
+        response_description="Request fulfilled, headers follow",
         response_headers=[
             ResponseHeader(
                 name="Content-Type",
-                description="Content type.",
+                required=True,
                 documentation_only=True,
             ),
             ResponseHeader(
                 name="Content-Length",
-                description="Content length.",
+                required=True,
                 documentation_only=True,
             ),
             ResponseHeader(
                 name="ETag",
-                description="Entity tag.",
+                required=True,
                 documentation_only=True,
             ),
             ResponseHeader(
                 name="Last-Modified",
-                description="Last modified.",
+                required=True,
                 documentation_only=True,
             ),
         ],
-        responses={
-            HTTP_200_OK: ResponseSpec(
-                None, description="Request fulfilled, nothing follows"
-            )
-        },
+        raises=[BadRequestException, NotFoundException],
     )
     async def headdownload(
         self,
@@ -222,7 +259,7 @@ class Controller(BaseController):
                 description="Start datetime of the event instance in event timezone.",
             ),
         ],
-    ) -> Response[None]:
+    ) -> None:
         """Download prerecording headers."""
         request = m.HeadDownloadRequest(event=event.root, start=start.root)
 
@@ -235,25 +272,25 @@ class Controller(BaseController):
         except e.PrerecordingNotFoundError as ex:
             raise NotFoundException from ex
 
-        return Response(
-            None,
-            headers={
-                "Content-Type": response.type,
-                "Content-Length": str(response.size),
-                "ETag": response.tag,
-                "Last-Modified": httpstringify(response.modified),
-            },
+        return cast(
+            "None",
+            Response(
+                None,
+                headers={
+                    "Content-Type": response.type,
+                    "Content-Length": str(response.size),
+                    "ETag": response.tag,
+                    "Last-Modified": httpstringify(response.modified),
+                },
+            ),
         )
 
     @handlers.put(
         "/{event:str}/{start:str}",
         summary="Upload prerecording",
         status_code=HTTP_204_NO_CONTENT,
-        responses={
-            HTTP_204_NO_CONTENT: ResponseSpec(
-                None, description="Request fulfilled, nothing follows"
-            )
-        },
+        raises=[BadRequestException, NotFoundException],
+        operation_class=UploadOperation,
     )
     async def upload(
         self,
@@ -278,7 +315,7 @@ class Controller(BaseController):
             ),
         ],
         request: Request,
-    ) -> Response[None]:
+    ) -> None:
         """Upload a prerecording."""
 
         async def _stream(request: Request) -> AsyncGenerator[bytes]:
@@ -305,16 +342,10 @@ class Controller(BaseController):
         except e.InstanceNotFoundError as ex:
             raise NotFoundException from ex
 
-        return Response(None)
-
     @handlers.delete(
         "/{event:str}/{start:str}",
         summary="Delete prerecording",
-        responses={
-            HTTP_204_NO_CONTENT: ResponseSpec(
-                None, description="Request fulfilled, nothing follows"
-            )
-        },
+        raises=[BadRequestException, NotFoundException],
     )
     async def delete(
         self,
@@ -331,7 +362,7 @@ class Controller(BaseController):
                 description="Start datetime of the event instance in event timezone.",
             ),
         ],
-    ) -> Response[None]:
+    ) -> None:
         """Delete a prerecording."""
         request = m.DeleteRequest(event=event.root, start=start.root)
 
@@ -343,5 +374,3 @@ class Controller(BaseController):
             raise NotFoundException from ex
         except e.PrerecordingNotFoundError as ex:
             raise NotFoundException from ex
-
-        return Response(None)
