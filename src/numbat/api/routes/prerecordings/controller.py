@@ -87,7 +87,7 @@ class Controller(BaseController):
     @handlers.get(
         "/{event:str}",
         summary="List prerecordings",
-        raises=[BadRequestException, NotFoundException],
+        raises=[BadRequestException],
     )
     async def list(  # noqa: PLR0913
         self,
@@ -141,10 +141,8 @@ class Controller(BaseController):
 
         try:
             response = await service.list(request)
-        except e.BadEventTypeError as ex:
+        except e.ValidationError as ex:
             raise BadRequestException from ex
-        except e.EventNotFoundError as ex:
-            raise NotFoundException from ex
 
         return Response(Serializable(response.results))
 
@@ -199,17 +197,15 @@ class Controller(BaseController):
 
         try:
             response = await service.download(request)
-        except e.BadEventTypeError as ex:
+        except e.ValidationError as ex:
             raise BadRequestException from ex
-        except e.InstanceNotFoundError as ex:
-            raise NotFoundException from ex
-        except e.PrerecordingNotFoundError as ex:
+        except e.NotFoundError as ex:
             raise NotFoundException from ex
 
         return Stream(
             response.data,
             headers={
-                "Content-Type": response.type,
+                "Content-Type": str(response.type),
                 "Content-Length": str(response.size),
                 "ETag": response.tag,
                 "Last-Modified": httpstringify(response.modified),
@@ -265,11 +261,9 @@ class Controller(BaseController):
 
         try:
             response = await service.headdownload(request)
-        except e.BadEventTypeError as ex:
+        except e.ValidationError as ex:
             raise BadRequestException from ex
-        except e.InstanceNotFoundError as ex:
-            raise NotFoundException from ex
-        except e.PrerecordingNotFoundError as ex:
+        except e.NotFoundError as ex:
             raise NotFoundException from ex
 
         return cast(
@@ -277,7 +271,7 @@ class Controller(BaseController):
             Response(
                 None,
                 headers={
-                    "Content-Type": response.type,
+                    "Content-Type": str(response.type),
                     "Content-Length": str(response.size),
                     "ETag": response.tag,
                     "Last-Modified": httpstringify(response.modified),
@@ -289,7 +283,7 @@ class Controller(BaseController):
         "/{event:str}/{start:str}",
         summary="Upload prerecording",
         status_code=HTTP_204_NO_CONTENT,
-        raises=[BadRequestException, NotFoundException],
+        raises=[BadRequestException],
         operation_class=UploadOperation,
     )
     async def upload(
@@ -337,10 +331,8 @@ class Controller(BaseController):
 
         try:
             await service.upload(req)
-        except e.BadEventTypeError as ex:
+        except e.ValidationError as ex:
             raise BadRequestException from ex
-        except e.InstanceNotFoundError as ex:
-            raise NotFoundException from ex
 
     @handlers.delete(
         "/{event:str}/{start:str}",
@@ -368,9 +360,7 @@ class Controller(BaseController):
 
         try:
             await service.delete(request)
-        except e.BadEventTypeError as ex:
+        except e.ValidationError as ex:
             raise BadRequestException from ex
-        except e.InstanceNotFoundError as ex:
-            raise NotFoundException from ex
-        except e.PrerecordingNotFoundError as ex:
+        except e.NotFoundError as ex:
             raise NotFoundException from ex

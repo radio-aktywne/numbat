@@ -5,6 +5,7 @@ from uuid import UUID
 
 from numbat.models.base import SerializableModel, datamodel
 from numbat.services.prerecordings import models as pm
+from numbat.utils.mime import MimeType
 from numbat.utils.time import NaiveDatetime
 
 
@@ -57,7 +58,7 @@ type DownloadRequestEvent = UUID
 
 type DownloadRequestStart = NaiveDatetime
 
-type DownloadResponseType = str
+type DownloadResponseType = MimeType
 
 type DownloadResponseSize = int
 
@@ -71,7 +72,7 @@ type HeadDownloadRequestEvent = UUID
 
 type HeadDownloadRequestStart = NaiveDatetime
 
-type HeadDownloadResponseType = str
+type HeadDownloadResponseType = MimeType
 
 type HeadDownloadResponseSize = int
 
@@ -83,7 +84,7 @@ type UploadRequestEvent = UUID
 
 type UploadRequestStart = NaiveDatetime
 
-type UploadRequestType = str
+type UploadRequestType = MimeType
 
 type UploadRequestData = AsyncIterator[bytes]
 

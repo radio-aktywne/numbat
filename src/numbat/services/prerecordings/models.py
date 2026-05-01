@@ -1,14 +1,10 @@
-from collections.abc import Sequence
+from collections.abc import AsyncIterator, Sequence
 from datetime import datetime
 from enum import StrEnum
 from uuid import UUID
 
 from numbat.models.base import datamodel
-from numbat.services.amber import models as am
-
-DownloadContent = am.DownloadContent
-
-UploadContent = am.UploadContent
+from numbat.utils.mime import MimeType
 
 
 class ListOrder(StrEnum):
@@ -27,6 +23,37 @@ class Prerecording:
 
     start: datetime
     """Start datetime of the event instance in event timezone."""
+
+
+@datamodel
+class UploadContent:
+    """Content model for upload."""
+
+    type: MimeType
+    """Content type."""
+
+    data: AsyncIterator[bytes]
+    """Asynchronous iterator of data bytes."""
+
+
+@datamodel
+class DownloadContent:
+    """Content model for download."""
+
+    type: MimeType
+    """Content type."""
+
+    size: int
+    """Size of the content in bytes."""
+
+    tag: str
+    """ETag of the content."""
+
+    modified: datetime
+    """Date and time when the content was last modified."""
+
+    data: AsyncIterator[bytes]
+    """Asynchronous iterator of data bytes."""
 
 
 @datamodel

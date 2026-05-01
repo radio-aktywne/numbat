@@ -18,14 +18,10 @@ class Service:
     def _handle_errors(self) -> Generator[None]:
         try:
             yield
-        except pe.EventNotFoundError as ex:
-            raise e.EventNotFoundError from ex
-        except pe.BadEventTypeError as ex:
-            raise e.BadEventTypeError from ex
-        except pe.InstanceNotFoundError as ex:
-            raise e.InstanceNotFoundError from ex
-        except pe.PrerecordingNotFoundError as ex:
-            raise e.PrerecordingNotFoundError from ex
+        except pe.ValidationError as ex:
+            raise e.ValidationError from ex
+        except pe.NotFoundError as ex:
+            raise e.NotFoundError from ex
         except pe.AmberError as ex:
             raise e.AmberError from ex
         except pe.BeaverError as ex:
