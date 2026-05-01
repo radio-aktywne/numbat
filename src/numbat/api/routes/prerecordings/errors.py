@@ -2,20 +2,12 @@ class ServiceError(Exception):
     """Base class for service errors."""
 
 
-class BadEventTypeError(ServiceError):
-    """Raised when event type is not supported."""
+class ValidationError(ServiceError):
+    """Raised when a validation error occurs."""
 
 
-class EventNotFoundError(ServiceError):
-    """Raised when event is not found."""
-
-
-class InstanceNotFoundError(ServiceError):
-    """Raised when instance is not found."""
-
-
-class PrerecordingNotFoundError(ServiceError):
-    """Raised when prerecording is not found."""
+class NotFoundError(ServiceError):
+    """Raised when a resource is not found."""
 
 
 class AmberError(ServiceError):
