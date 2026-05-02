@@ -1,27 +1,35 @@
-from collections.abc import AsyncIterator, Mapping
+from collections.abc import AsyncGenerator, AsyncIterator
 from datetime import datetime
 
 from numbat.models.base import datamodel
 
 
 @datamodel
-class Object:
-    """Object model."""
+class ObjectListing:
+    """Object listing model."""
 
     name: str
     """Name of the object."""
 
-    modified: datetime | None
-    """Datetime when the object was last modified."""
 
-    size: int | None
+@datamodel
+class ObjectDetails:
+    """Object details model."""
+
+    name: str
+    """Name of the object."""
+
+    type: str
+    """Content type of the object."""
+
+    size: int
     """Size of the object in bytes."""
 
-    metadata: Mapping[str, str] | None
-    """Metadata of the object."""
+    tag: str
+    """ETag of the object."""
 
-    type: str | None
-    """Content type of the object."""
+    modified: datetime
+    """Datetime when the object was last modified."""
 
 
 @datamodel
@@ -51,8 +59,8 @@ class DownloadContent:
     modified: datetime
     """Datetime when the object was last modified."""
 
-    data: AsyncIterator[bytes]
-    """Asynchronous iterator of data bytes."""
+    data: AsyncGenerator[bytes]
+    """Asynchronous generator of data bytes."""
 
 
 @datamodel
@@ -70,30 +78,8 @@ class ListRequest:
 class ListResponse:
     """Response for listing objects."""
 
-    objects: AsyncIterator[Object]
-    """Asynchronous iterator of objects."""
-
-
-@datamodel
-class UploadRequest:
-    """Request for uploading an object."""
-
-    name: str
-    """Name of the object."""
-
-    content: UploadContent
-    """Content of the object."""
-
-    chunk: int = 5 * (1024**2)
-    """Chunk size for uploading."""
-
-
-@datamodel
-class UploadResponse:
-    """Response for uploading an object."""
-
-    object: Object
-    """Uploaded object."""
+    objects: AsyncGenerator[ObjectListing]
+    """Asynchronous generator of object listings."""
 
 
 @datamodel
@@ -108,8 +94,8 @@ class GetRequest:
 class GetResponse:
     """Response for getting an object."""
 
-    object: Object
-    """Requested object."""
+    object: ObjectDetails
+    """Requested object details."""
 
 
 @datamodel
@@ -132,6 +118,25 @@ class DownloadResponse:
 
 
 @datamodel
+class UploadRequest:
+    """Request for uploading an object."""
+
+    name: str
+    """Name of the object."""
+
+    content: UploadContent
+    """Content of the object."""
+
+    chunk: int = 5 * (1024**2)
+    """Chunk size for uploading."""
+
+
+@datamodel
+class UploadResponse:
+    """Response for uploading an object."""
+
+
+@datamodel
 class CopyRequest:
     """Request for copying an object."""
 
@@ -146,9 +151,6 @@ class CopyRequest:
 class CopyResponse:
     """Response for copying an object."""
 
-    object: Object
-    """Copied object."""
-
 
 @datamodel
 class DeleteRequest:
@@ -161,6 +163,3 @@ class DeleteRequest:
 @datamodel
 class DeleteResponse:
     """Response for deleting an object."""
-
-    object: Object
-    """Deleted object."""

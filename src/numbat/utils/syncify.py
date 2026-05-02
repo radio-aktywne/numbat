@@ -1,28 +1,35 @@
 import asyncio
-from collections.abc import AsyncIterator, Generator, Iterator
+from collections.abc import AsyncIterator as BaseAsyncIterator
+from collections.abc import Iterator as BaseIterator
+from typing import override
 
 
-class Sentinel:
-    """Sentinel class for iterator termination."""
+class Iterator[T](BaseIterator[T]):
+    """Iterator that wraps an async iterator."""
 
+    def __init__(
+        self,
+        iterator: BaseAsyncIterator[T],
+        loop: asyncio.AbstractEventLoop | None = None,
+    ) -> None:
+        self.iterator = iterator
+        self.loop = loop if loop is not None else asyncio.get_running_loop()
 
-def iterator[T](
-    it: AsyncIterator[T], loop: asyncio.AbstractEventLoop | None = None
-) -> Iterator[T]:
-    """Convert an async iterator to an iterator."""
+    @override
+    def __next__(self) -> T:
+        class Sentinel:
+            pass
 
-    def _iterate(it: AsyncIterator[T], loop: asyncio.AbstractEventLoop) -> Generator[T]:
-        sentinel = Sentinel()
+        async def wrap() -> T | Sentinel:
+            try:
+                return await anext(self.iterator)
+            except StopAsyncIteration:
+                return Sentinel()
 
-        while True:
-            coroutine = anext(it, sentinel)
-            future = asyncio.run_coroutine_threadsafe(coroutine, loop)
-            item = future.result()
+        future = asyncio.run_coroutine_threadsafe(wrap(), self.loop)
+        item = future.result()
 
-            if isinstance(item, Sentinel):
-                break
+        if isinstance(item, Sentinel):
+            raise StopIteration from None
 
-            yield item
-
-    loop = loop if loop is not None else asyncio.get_running_loop()
-    return _iterate(it, loop)
+        return item

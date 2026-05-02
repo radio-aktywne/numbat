@@ -48,9 +48,9 @@ class AppBuilder:
     def _build_initial_state(self) -> State:
         return State(
             {
-                "config": self._config,
                 "amber": AmberService(config=self._config.amber),
                 "beaver": BeaverService(config=self._config.beaver),
+                "config": self._config,
             }
         )
 
