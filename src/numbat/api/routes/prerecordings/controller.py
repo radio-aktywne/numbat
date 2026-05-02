@@ -1,4 +1,4 @@
-from collections.abc import AsyncGenerator, Mapping
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Annotated, cast
 
@@ -6,7 +6,6 @@ from litestar import Controller as BaseController
 from litestar import Request, handlers
 from litestar.datastructures import ResponseHeader
 from litestar.di import Provide
-from litestar.exceptions import InternalServerException
 from litestar.openapi.spec import (
     OpenAPIFormat,
     OpenAPIMediaType,
@@ -202,15 +201,19 @@ class Controller(BaseController):
         except e.NotFoundError as ex:
             raise NotFoundException from ex
 
-        return Stream(
-            response.data,
-            headers={
-                "Content-Type": str(response.type),
-                "Content-Length": str(response.size),
-                "ETag": response.tag,
-                "Last-Modified": httpstringify(response.modified),
-            },
-        )
+        try:
+            return Stream(
+                response.data,
+                headers={
+                    "Content-Type": str(response.type),
+                    "Content-Length": str(response.size),
+                    "ETag": response.tag,
+                    "Last-Modified": httpstringify(response.modified),
+                },
+            )
+        except:
+            await response.data.aclose()
+            raise
 
     @handlers.head(
         "/{event:str}/{start:str}",
@@ -311,28 +314,19 @@ class Controller(BaseController):
         request: Request,
     ) -> None:
         """Upload a prerecording."""
-
-        async def _stream(request: Request) -> AsyncGenerator[bytes]:
-            stream = request.stream()
-            while True:
-                try:
-                    chunk = await anext(stream)
-                except (StopAsyncIteration, InternalServerException):
-                    break
-
-                yield chunk
-
-        req = m.UploadRequest(
-            event=event.root,
-            start=start.root,
-            type=content_type.root,
-            data=_stream(request),
-        )
+        data = request.stream()
 
         try:
-            await service.upload(req)
-        except e.ValidationError as ex:
-            raise BadRequestException from ex
+            req = m.UploadRequest(
+                event=event.root, start=start.root, type=content_type.root, data=data
+            )
+
+            try:
+                await service.upload(req)
+            except e.ValidationError as ex:
+                raise BadRequestException from ex
+        finally:
+            await data.aclose()
 
     @handlers.delete(
         "/{event:str}/{start:str}",

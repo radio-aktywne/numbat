@@ -62,13 +62,17 @@ class Service:
         with self._handle_errors():
             download_response = await self._prerecordings.download(download_request)
 
-        return m.DownloadResponse(
-            type=download_response.content.type,
-            size=download_response.content.size,
-            tag=download_response.content.tag,
-            modified=download_response.content.modified,
-            data=download_response.content.data,
-        )
+        try:
+            return m.DownloadResponse(
+                type=download_response.content.type,
+                size=download_response.content.size,
+                tag=download_response.content.tag,
+                modified=download_response.content.modified,
+                data=download_response.content.data,
+            )
+        except:
+            await download_response.content.data.aclose()
+            raise
 
     async def headdownload(
         self, request: m.HeadDownloadRequest
@@ -78,6 +82,8 @@ class Service:
 
         with self._handle_errors():
             download_response = await self._prerecordings.download(download_request)
+
+        await download_response.content.data.aclose()
 
         return m.HeadDownloadResponse(
             type=download_response.content.type,

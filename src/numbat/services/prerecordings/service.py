@@ -1,4 +1,5 @@
-from collections.abc import AsyncIterator, Generator, Sequence
+import asyncio
+from collections.abc import Generator, Sequence
 from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
 from http import HTTPStatus
@@ -56,20 +57,18 @@ class PrerecordingsService:
 
         return events_get_response.event
 
-    async def _get_instance(
-        self, event: bm.Event, start: datetime
-    ) -> bm.EventInstance | None:
-        utcstart = (
-            start.replace(
-                hour=0, minute=0, second=0, microsecond=0, tzinfo=event.timezone
-            )
-            .astimezone(UTC)
-            .replace(tzinfo=None)
+    async def _get_instances(
+        self, event: bm.Event, after: datetime, before: datetime
+    ) -> Sequence[bm.EventInstance]:
+        utcafter = (
+            after.replace(tzinfo=event.timezone).astimezone(UTC).replace(tzinfo=None)
         )
-        utcend = utcstart + timedelta(days=1)
+        utcbefore = (
+            before.replace(tzinfo=event.timezone).astimezone(UTC).replace(tzinfo=None)
+        )
 
         schedule_list_request = bm.ScheduleListRequest(
-            start=utcstart, end=utcend, where={"id": str(event.id)}
+            start=utcafter, end=utcbefore, where={"id": str(event.id)}
         )
 
         with self._handle_errors():
@@ -80,12 +79,32 @@ class PrerecordingsService:
         schedule = next(iter(schedule_list_response.results.schedules), None)
 
         if not schedule:
-            return None
+            return []
+
+        return schedule.instances
+
+    async def _get_instance(
+        self, event: bm.Event, start: datetime
+    ) -> bm.EventInstance | None:
+        after = start.replace(hour=0, minute=0, second=0, microsecond=0)
+        before = after + timedelta(days=1)
+        instances = await self._get_instances(event, after, before)
 
         return next(
-            (instance for instance in schedule.instances if instance.start == start),
+            (instance for instance in instances if instance.start == start),
             None,
         )
+
+    async def _get_object(self, name: str) -> am.ObjectDetails | None:
+        get_request = am.GetRequest(name=name)
+
+        with self._handle_errors():
+            try:
+                get_response = await self._amber.get(get_request)
+            except ae.NotFoundError:
+                return None
+
+        return get_response.object
 
     def _make_prefix(self, event: UUID) -> str:
         return f"{event}/"
@@ -98,18 +117,25 @@ class PrerecordingsService:
         name = self._make_name(start)
         return f"{prefix}{name}"
 
-    def _parse_prefix(self, prefix: str) -> UUID:
-        return UUID(prefix[:-1])
+    def _parse_prefix(self, prefix: str) -> UUID | None:
+        try:
+            return UUID(prefix[:-1])
+        except ValueError:
+            return None
 
-    def _parse_name(self, name: str) -> datetime:
-        return isoparse(name)
+    def _parse_name(self, name: str) -> datetime | None:
+        try:
+            return isoparse(name)
+        except ValueError:
+            return None
 
-    def _parse_key(self, key: str) -> tuple[UUID, datetime]:
+    def _parse_key(self, key: str) -> tuple[UUID, datetime] | None:
         split = key.find("/")
         prefix, name = key[: split + 1], key[split + 1 :]
         event = self._parse_prefix(prefix)
         start = self._parse_name(name)
-        return event, start
+
+        return (event, start) if event and start else None
 
     def _parse_content_type(self, value: str | None) -> MimeType | None:
         if value is None:
@@ -122,52 +148,107 @@ class PrerecordingsService:
 
         return parsed if ContentTypeChecker().check(parsed) else None
 
-    async def _list_get_objects(self, prefix: str) -> AsyncIterator[am.Object]:
+    async def _list_get_objects(self, prefix: str) -> Sequence[am.ObjectListing]:
         list_request = am.ListRequest(prefix=prefix, recursive=False)
 
         with self._handle_errors():
             list_response = await self._amber.list(list_request)
+            return [obj async for obj in list_response.objects]
 
-            async for obj in list_response.objects:
-                if self._parse_content_type(obj.type):
-                    yield obj
+    def _list_map_objects(
+        self, objects: Sequence[am.ObjectListing]
+    ) -> Sequence[m.Prerecording]:
+        return [
+            m.Prerecording(event=event, start=start)
+            for obj in objects
+            if (parsed := self._parse_key(obj.name))
+            for event, start in [parsed]
+        ]
 
-    async def _list_map_objects(
-        self, objects: AsyncIterator[am.Object]
-    ) -> AsyncIterator[m.Prerecording]:
-        async for obj in objects:
-            event, start = self._parse_key(obj.name)
-            yield m.Prerecording(event=event, start=start)
+    def _list_filter_prerecordings_by_time(
+        self,
+        prerecordings: Sequence[m.Prerecording],
+        after: datetime | None,
+        before: datetime | None,
+    ) -> Sequence[m.Prerecording]:
+        return [
+            prerecording
+            for prerecording in prerecordings
+            if (after is None or prerecording.start >= after)
+            and (before is None or prerecording.start < before)
+        ]
+
+    async def _list_filter_prerecordings_by_instance(
+        self, prerecordings: Sequence[m.Prerecording], event: bm.Event
+    ) -> Sequence[m.Prerecording]:
+        after = min(prerecording.start for prerecording in prerecordings)
+        after = after.replace(hour=0, minute=0, second=0, microsecond=0)
+
+        before = max(prerecording.start for prerecording in prerecordings)
+        before = before.replace(hour=0, minute=0, second=0, microsecond=0)
+        before = before + timedelta(days=1)
+
+        instances = await self._get_instances(event, after, before)
+        starts = {instance.start for instance in instances}
+
+        return [
+            prerecording
+            for prerecording in prerecordings
+            if prerecording.start in starts
+        ]
+
+    async def _list_filter_prerecordings_by_content_type(
+        self, prerecordings: Sequence[m.Prerecording]
+    ) -> Sequence[m.Prerecording]:
+        semaphore = asyncio.Semaphore(10)
+
+        async def get(prerecording: m.Prerecording) -> am.ObjectDetails | None:
+            key = self._make_key(prerecording.event, prerecording.start)
+
+            async with semaphore:
+                return await self._get_object(key)
+
+        details = await asyncio.gather(
+            *[get(prerecording) for prerecording in prerecordings]
+        )
+
+        return [
+            prerecording
+            for prerecording, detail in zip(prerecordings, details, strict=False)
+            if detail and self._parse_content_type(detail.type)
+        ]
 
     async def _list_filter_prerecordings(
         self,
-        prerecordings: AsyncIterator[m.Prerecording],
+        prerecordings: Sequence[m.Prerecording],
         event: bm.Event,
         after: datetime | None,
         before: datetime | None,
-    ) -> AsyncIterator[m.Prerecording]:
-        async for prerecording in prerecordings:
-            if after is not None and prerecording.start < after:
-                continue
-
-            if before is not None and prerecording.start >= before:
-                continue
-
-            if not await self._get_instance(event, prerecording.start):
-                continue
-
-            yield prerecording
-
-    async def _list_sort_prerecordings(
-        self, prerecordings: AsyncIterator[m.Prerecording], order: m.ListOrder | None
     ) -> Sequence[m.Prerecording]:
-        listed = [prerecording async for prerecording in prerecordings]
+        prerecordings = self._list_filter_prerecordings_by_time(
+            prerecordings, after, before
+        )
 
+        if not prerecordings:
+            return []
+
+        prerecordings = await self._list_filter_prerecordings_by_instance(
+            prerecordings, event
+        )
+
+        if not prerecordings:
+            return []
+
+        return await self._list_filter_prerecordings_by_content_type(prerecordings)
+
+    def _list_sort_prerecordings(
+        self, prerecordings: Sequence[m.Prerecording], order: m.ListOrder | None
+    ) -> Sequence[m.Prerecording]:
         if order is None:
-            return listed
+            return prerecordings
 
         return sorted(
-            listed,
+            prerecordings,
             key=lambda prerecording: prerecording.start,
             reverse=order == m.ListOrder.DESCENDING,
         )
@@ -198,14 +279,12 @@ class PrerecordingsService:
 
         prefix = self._make_prefix(event.id)
 
-        objects = self._list_get_objects(prefix)
+        objects = await self._list_get_objects(prefix)
         prerecordings = self._list_map_objects(objects)
-        prerecordings = self._list_filter_prerecordings(
+        prerecordings = await self._list_filter_prerecordings(
             prerecordings, event, request.after, request.before
         )
-        prerecordings = await self._list_sort_prerecordings(
-            prerecordings, request.order
-        )
+        prerecordings = self._list_sort_prerecordings(prerecordings, request.order)
 
         count = len(prerecordings)
 
@@ -245,20 +324,24 @@ class PrerecordingsService:
         ):
             download_response = await self._amber.download(download_request)
 
-        content_type = self._parse_content_type(download_response.content.type)
+        try:
+            content_type = self._parse_content_type(download_response.content.type)
 
-        if content_type is None:
-            raise e.PrerecordingNotFoundError(event.id, instance.start)
+            if content_type is None:
+                raise e.PrerecordingNotFoundError(event.id, instance.start)
 
-        return m.DownloadResponse(
-            content=m.DownloadContent(
-                type=content_type,
-                size=download_response.content.size,
-                tag=download_response.content.tag,
-                modified=download_response.content.modified,
-                data=download_response.content.data,
+            return m.DownloadResponse(
+                content=m.DownloadContent(
+                    type=content_type,
+                    size=download_response.content.size,
+                    tag=download_response.content.tag,
+                    modified=download_response.content.modified,
+                    data=download_response.content.data,
+                )
             )
-        )
+        except:
+            await download_response.content.data.aclose()
+            raise
 
     async def upload(self, request: m.UploadRequest) -> m.UploadResponse:
         """Upload a prerecording."""

@@ -1,4 +1,4 @@
-from collections.abc import AsyncIterator, Sequence
+from collections.abc import AsyncGenerator, AsyncIterator, Sequence
 from datetime import datetime
 from enum import StrEnum
 from uuid import UUID
@@ -52,8 +52,8 @@ class DownloadContent:
     modified: datetime
     """Date and time when the content was last modified."""
 
-    data: AsyncIterator[bytes]
-    """Asynchronous iterator of data bytes."""
+    data: AsyncGenerator[bytes]
+    """Asynchronous generator of data bytes."""
 
 
 @datamodel
