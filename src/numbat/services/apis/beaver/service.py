@@ -46,10 +46,10 @@ class BeaverEventsService:
         self.client = client
 
     def _dump(self, value: Any, type: Any) -> Any:  # noqa: A002
-        return TypeAdapter(type).dump_python(value, mode="json")
+        return TypeAdapter(type).dump_python(value, mode="json", round_trip=True)
 
     def _dump_json(self, value: Any, type: Any) -> str:  # noqa: A002
-        return TypeAdapter(type).dump_json(value).decode()
+        return TypeAdapter(type).dump_json(value, round_trip=True).decode()
 
     async def get(self, request: m.EventsGetRequest) -> m.EventsGetResponse:
         """Get event."""
@@ -74,10 +74,10 @@ class BeaverInstancesService:
         self.client = client
 
     def _dump(self, value: Any, type: Any) -> Any:  # noqa: A002
-        return TypeAdapter(type).dump_python(value, mode="json")
+        return TypeAdapter(type).dump_python(value, mode="json", round_trip=True)
 
     def _dump_json(self, value: Any, type: Any) -> str:  # noqa: A002
-        return TypeAdapter(type).dump_json(value).decode()
+        return TypeAdapter(type).dump_json(value, round_trip=True).decode()
 
     async def list(self, request: m.InstancesListRequest) -> m.InstancesListResponse:
         """List instances."""
