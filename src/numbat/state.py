@@ -12,7 +12,7 @@ class State(LitestarState):
     """Service for amber database."""
 
     beaver: BeaverService
-    """Service for beaver service."""
+    """Service for beaver API."""
 
     config: Config
     """Configuration for the service."""
