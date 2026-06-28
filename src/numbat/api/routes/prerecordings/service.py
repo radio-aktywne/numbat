@@ -3,9 +3,9 @@ from contextlib import contextmanager
 
 from numbat.api.routes.prerecordings import errors as e
 from numbat.api.routes.prerecordings import models as m
-from numbat.services.prerecordings import errors as pe
-from numbat.services.prerecordings import models as pm
-from numbat.services.prerecordings.service import PrerecordingsService
+from numbat.services.entities.prerecordings import errors as pe
+from numbat.services.entities.prerecordings import models as pm
+from numbat.services.entities.prerecordings.service import PrerecordingsService
 
 
 class Service:
@@ -22,10 +22,6 @@ class Service:
             raise e.ValidationError from ex
         except pe.NotFoundError as ex:
             raise e.NotFoundError from ex
-        except pe.AmberError as ex:
-            raise e.AmberError from ex
-        except pe.BeaverError as ex:
-            raise e.BeaverError from ex
         except pe.ServiceError as ex:
             raise e.ServiceError from ex
 

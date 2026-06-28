@@ -4,8 +4,8 @@ version = "0.8.0"
 classifiers = ["Private :: Do Not Upload"]
 requires-python = "~= 3.13.0"
 dependencies = [
-  # Helps building API clients
-  "gracy ~= 1.34.0",
+  # Async HTTP requests
+  "httpx ~= 0.28.0",
   # Main API framework
   "litestar ~= 2.19.0",
   # MinIO client
@@ -28,8 +28,6 @@ dependencies = [
 dev = [
   # Template management
   "copier ~= 9.6.0",
-  # Async HTTP requests
-  "httpx ~= 0.28.0",
   # Testing framework
   "pytest ~= 9.0.0",
   # Asyncio support for pytest

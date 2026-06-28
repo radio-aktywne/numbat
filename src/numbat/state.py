@@ -1,8 +1,8 @@
 from litestar.datastructures import State as LitestarState
 
 from numbat.config.models import Config
-from numbat.services.amber.service import AmberService
-from numbat.services.beaver.service import BeaverService
+from numbat.services.apis.beaver.service import BeaverService
+from numbat.services.data.amber.service import AmberService
 
 
 class State(LitestarState):

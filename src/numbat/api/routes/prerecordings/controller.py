@@ -1,6 +1,6 @@
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Annotated, cast
+from typing import Annotated, Any, cast
 
 from litestar import Controller as BaseController
 from litestar import Request, handlers
@@ -18,15 +18,15 @@ from litestar.openapi.spec import (
 from litestar.params import Parameter
 from litestar.response import Response, Stream
 from litestar.status_codes import HTTP_200_OK, HTTP_204_NO_CONTENT
+from pydantic import TypeAdapter
 
 from numbat.api.exceptions import BadRequestException, NotFoundException
 from numbat.api.routes.prerecordings import errors as e
 from numbat.api.routes.prerecordings import models as m
 from numbat.api.routes.prerecordings.service import Service
 from numbat.models.base import Jsonable, Serializable
-from numbat.services.prerecordings.service import PrerecordingsService
+from numbat.services.entities.prerecordings.service import PrerecordingsService
 from numbat.state import State
-from numbat.utils.time import httpstringify
 
 
 @dataclass
@@ -201,16 +201,18 @@ class Controller(BaseController):
         except e.NotFoundError as ex:
             raise NotFoundException from ex
 
+        def dump(value: Any, type: Any) -> str:  # noqa: A002
+            return str(TypeAdapter(type).dump_python(value, mode="json"))
+
         try:
-            return Stream(
-                response.data,
-                headers={
-                    "Content-Type": str(response.type),
-                    "Content-Length": str(response.size),
-                    "ETag": response.tag,
-                    "Last-Modified": httpstringify(response.modified),
-                },
-            )
+            headers = {
+                "Content-Type": dump(response.type, m.DownloadResponseType),
+                "Content-Length": dump(response.size, m.DownloadResponseSize),
+                "ETag": dump(response.tag, m.DownloadResponseTag),
+                "Last-Modified": dump(response.modified, m.DownloadResponseModified),
+            }
+
+            return Stream(response.data, headers=headers)
         except:
             await response.data.aclose()
             raise
@@ -269,18 +271,17 @@ class Controller(BaseController):
         except e.NotFoundError as ex:
             raise NotFoundException from ex
 
-        return cast(
-            "None",
-            Response(
-                None,
-                headers={
-                    "Content-Type": str(response.type),
-                    "Content-Length": str(response.size),
-                    "ETag": response.tag,
-                    "Last-Modified": httpstringify(response.modified),
-                },
-            ),
-        )
+        def dump(value: Any, type: Any) -> str:  # noqa: A002
+            return str(TypeAdapter(type).dump_python(value, mode="json"))
+
+        headers = {
+            "Content-Type": dump(response.type, m.HeadDownloadResponseType),
+            "Content-Length": dump(response.size, m.HeadDownloadResponseSize),
+            "ETag": dump(response.tag, m.HeadDownloadResponseTag),
+            "Last-Modified": dump(response.modified, m.HeadDownloadResponseModified),
+        }
+
+        return cast("None", Response(None, headers=headers))
 
     @handlers.put(
         "/{event:str}/{start:str}",

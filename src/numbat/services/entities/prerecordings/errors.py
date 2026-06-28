@@ -54,11 +54,3 @@ class PrerecordingNotFoundError(NotFoundError):
         super().__init__(
             f"Prerecording not found for instance of prerecorded event {event_id} starting at {isostringify(start)}."
         )
-
-
-class AmberError(ServiceError):
-    """Raised when a amber database operation fails."""
-
-
-class BeaverError(ServiceError):
-    """Raised when an beaver service operation fails."""

@@ -12,8 +12,8 @@ from numbat.api.openapi import OpenAPIConfigBuilder
 from numbat.api.plugins.pydantic import PydanticPlugin
 from numbat.api.routes.router import router
 from numbat.config.models import Config
-from numbat.services.amber.service import AmberService
-from numbat.services.beaver.service import BeaverService
+from numbat.services.apis.beaver.service import BeaverService
+from numbat.services.data.amber.service import AmberService
 from numbat.state import State
 
 
