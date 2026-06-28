@@ -2,18 +2,17 @@ import asyncio
 from collections.abc import Generator, Sequence
 from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
-from http import HTTPStatus
 from uuid import UUID
 
-from numbat.services.amber import errors as ae
-from numbat.services.amber import models as am
-from numbat.services.amber.service import AmberService
-from numbat.services.beaver import errors as be
-from numbat.services.beaver import models as bm
-from numbat.services.beaver.service import BeaverService
-from numbat.services.prerecordings import errors as e
-from numbat.services.prerecordings import models as m
-from numbat.services.prerecordings.utils import ContentTypeChecker
+from numbat.services.apis.beaver import errors as be
+from numbat.services.apis.beaver import models as bm
+from numbat.services.apis.beaver.service import BeaverService
+from numbat.services.data.amber import errors as ae
+from numbat.services.data.amber import models as am
+from numbat.services.data.amber.service import AmberService
+from numbat.services.entities.prerecordings import errors as e
+from numbat.services.entities.prerecordings import models as m
+from numbat.services.entities.prerecordings.utils import ContentTypeChecker
 from numbat.utils.mime import MimeType, MimeTypeValidationError
 from numbat.utils.time import isoparse, isostringify
 
@@ -29,10 +28,8 @@ class PrerecordingsService:
     def _handle_errors(self) -> Generator[None]:
         try:
             yield
-        except ae.ServiceError as ex:
-            raise e.AmberError from ex
-        except be.ServiceError as ex:
-            raise e.BeaverError from ex
+        except (ae.ServiceError, be.ServiceError) as ex:
+            raise e.ServiceError from ex
 
     @contextmanager
     def _handle_not_found(self, event: UUID, start: datetime) -> Generator[None]:
@@ -46,54 +43,46 @@ class PrerecordingsService:
 
         with self._handle_errors():
             try:
-                events_get_response = await self._beaver.events.get_by_id(
-                    events_get_request
-                )
-            except be.ResponseError as ex:
-                if ex.response.status_code == HTTPStatus.NOT_FOUND:
-                    return None
-
-                raise
+                events_get_response = await self._beaver.events.get(events_get_request)
+            except be.NotFoundError:
+                return None
 
         return events_get_response.event
 
-    async def _get_instances(
+    async def _get_event_instances(
         self, event: bm.Event, after: datetime, before: datetime
-    ) -> Sequence[bm.EventInstance]:
-        utcafter = (
-            after.replace(tzinfo=event.timezone).astimezone(UTC).replace(tzinfo=None)
-        )
-        utcbefore = (
-            before.replace(tzinfo=event.timezone).astimezone(UTC).replace(tzinfo=None)
-        )
+    ) -> Sequence[bm.Instance]:
+        utcafter = after.replace(tzinfo=event.timezone).astimezone(UTC)
+        utcbefore = before.replace(tzinfo=event.timezone).astimezone(UTC)
 
-        schedule_list_request = bm.ScheduleListRequest(
-            start=utcafter, end=utcbefore, where={"id": str(event.id)}
+        instances_list_request = bm.InstancesListRequest(
+            start=utcafter,
+            end=utcbefore,
+            where={"event": {"is": {"id": event.id}}},
+            include={"event": True},
         )
 
         with self._handle_errors():
-            schedule_list_response = await self._beaver.schedule.list(
-                schedule_list_request
+            instances_list_response = await self._beaver.instances.list(
+                instances_list_request
             )
 
-        schedule = next(iter(schedule_list_response.results.schedules), None)
+        return instances_list_response.results.instances
 
-        if not schedule:
-            return []
-
-        return schedule.instances
-
-    async def _get_instance(
-        self, event: bm.Event, start: datetime
-    ) -> bm.EventInstance | None:
-        after = start.replace(hour=0, minute=0, second=0, microsecond=0)
-        before = after + timedelta(days=1)
-        instances = await self._get_instances(event, after, before)
-
-        return next(
-            (instance for instance in instances if instance.start == start),
-            None,
+    async def _get_instance(self, event: UUID, start: datetime) -> bm.Instance | None:
+        instances_get_request = bm.InstancesGetRequest(
+            event_id=event, start=start, include={"event": True}
         )
+
+        with self._handle_errors():
+            try:
+                instances_get_response = await self._beaver.instances.get(
+                    instances_get_request
+                )
+            except be.NotFoundError:
+                return None
+
+        return instances_get_response.instance
 
     async def _get_object(self, name: str) -> am.ObjectDetails | None:
         get_request = am.GetRequest(name=name)
@@ -188,7 +177,7 @@ class PrerecordingsService:
         before = before.replace(hour=0, minute=0, second=0, microsecond=0)
         before = before + timedelta(days=1)
 
-        instances = await self._get_instances(event, after, before)
+        instances = await self._get_event_instances(event, after, before)
         starts = {instance.start for instance in instances}
 
         return [
@@ -301,26 +290,24 @@ class PrerecordingsService:
 
     async def download(self, request: m.DownloadRequest) -> m.DownloadResponse:
         """Download a prerecording."""
-        event = await self._get_event(request.event)
-
-        if not event:
-            raise e.EventNotFoundError(request.event)
-
-        if event.type != bm.EventType.prerecorded:
-            raise e.BadEventTypeError(event.type)
-
-        instance = await self._get_instance(event, request.start)
+        instance = await self._get_instance(request.event, request.start)
 
         if not instance:
-            raise e.InstanceNotFoundError(event.id, request.start)
+            raise e.InstanceNotFoundError(request.event, request.start)
 
-        key = self._make_key(event.id, instance.start)
+        if instance.event is None:
+            raise e.ServiceError
+
+        if instance.event.type != bm.EventType.prerecorded:
+            raise e.BadEventTypeError(instance.event.type)
+
+        key = self._make_key(instance.event.id, instance.start)
 
         download_request = am.DownloadRequest(name=key)
 
         with (
             self._handle_errors(),
-            self._handle_not_found(event.id, instance.start),
+            self._handle_not_found(instance.event.id, instance.start),
         ):
             download_response = await self._amber.download(download_request)
 
@@ -328,7 +315,7 @@ class PrerecordingsService:
             content_type = self._parse_content_type(download_response.content.type)
 
             if content_type is None:
-                raise e.PrerecordingNotFoundError(event.id, instance.start)
+                raise e.PrerecordingNotFoundError(instance.event.id, instance.start)
 
             return m.DownloadResponse(
                 content=m.DownloadContent(
@@ -345,23 +332,21 @@ class PrerecordingsService:
 
     async def upload(self, request: m.UploadRequest) -> m.UploadResponse:
         """Upload a prerecording."""
-        event = await self._get_event(request.event)
-
-        if not event:
-            raise e.EventNotFoundError(request.event)
-
-        if event.type != bm.EventType.prerecorded:
-            raise e.BadEventTypeError(event.type)
-
-        instance = await self._get_instance(event, request.start)
+        instance = await self._get_instance(request.event, request.start)
 
         if not instance:
-            raise e.InstanceNotFoundError(event.id, request.start)
+            raise e.InstanceNotFoundError(request.event, request.start)
+
+        if instance.event is None:
+            raise e.ServiceError
+
+        if instance.event.type != bm.EventType.prerecorded:
+            raise e.BadEventTypeError(instance.event.type)
 
         if not ContentTypeChecker().check(request.content.type):
             raise e.UnsupportedContentTypeError(request.content.type)
 
-        key = self._make_key(event.id, instance.start)
+        key = self._make_key(instance.event.id, instance.start)
 
         upload_request = am.UploadRequest(
             name=key,
@@ -377,37 +362,35 @@ class PrerecordingsService:
 
     async def delete(self, request: m.DeleteRequest) -> m.DeleteResponse:
         """Delete a prerecording."""
-        event = await self._get_event(request.event)
-
-        if not event:
-            raise e.EventNotFoundError(request.event)
-
-        if event.type != bm.EventType.prerecorded:
-            raise e.BadEventTypeError(event.type)
-
-        instance = await self._get_instance(event, request.start)
+        instance = await self._get_instance(request.event, request.start)
 
         if not instance:
-            raise e.InstanceNotFoundError(event.id, request.start)
+            raise e.InstanceNotFoundError(request.event, request.start)
 
-        key = self._make_key(event.id, instance.start)
+        if instance.event is None:
+            raise e.ServiceError
+
+        if instance.event.type != bm.EventType.prerecorded:
+            raise e.BadEventTypeError(instance.event.type)
+
+        key = self._make_key(instance.event.id, instance.start)
 
         get_request = am.GetRequest(name=key)
 
         with (
             self._handle_errors(),
-            self._handle_not_found(event.id, instance.start),
+            self._handle_not_found(instance.event.id, instance.start),
         ):
             get_response = await self._amber.get(get_request)
 
         if not self._parse_content_type(get_response.object.type):
-            raise e.PrerecordingNotFoundError(event.id, instance.start)
+            raise e.PrerecordingNotFoundError(instance.event.id, instance.start)
 
         delete_request = am.DeleteRequest(name=key)
 
         with (
             self._handle_errors(),
-            self._handle_not_found(event.id, instance.start),
+            self._handle_not_found(instance.event.id, instance.start),
         ):
             await self._amber.delete(delete_request)
 

@@ -7,12 +7,4 @@ class ValidationError(ServiceError):
 
 
 class NotFoundError(ServiceError):
-    """Raised when a resource is not found."""
-
-
-class AmberError(ServiceError):
-    """Raised when a amber database error occurs."""
-
-
-class BeaverError(ServiceError):
-    """Raised when an beaver service error occurs."""
+    """Raised when a prerecording is not found."""

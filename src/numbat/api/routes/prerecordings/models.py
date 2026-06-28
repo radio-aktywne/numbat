@@ -1,12 +1,11 @@
 from collections.abc import AsyncGenerator, AsyncIterator, Sequence
-from datetime import datetime
 from typing import Self
 from uuid import UUID
 
 from numbat.models.base import SerializableModel, datamodel
-from numbat.services.prerecordings import models as pm
+from numbat.services.entities.prerecordings import models as pm
 from numbat.utils.mime import MimeType
-from numbat.utils.time import NaiveDatetime
+from numbat.utils.time import HTTPDatetime, NaiveDatetime
 
 
 class Prerecording(SerializableModel):
@@ -20,7 +19,7 @@ class Prerecording(SerializableModel):
 
     @classmethod
     def map(cls, prerecording: pm.Prerecording) -> Self:
-        """Map to internal representation."""
+        """Map from internal representation."""
         return cls(event=prerecording.event, start=prerecording.start)
 
 
@@ -64,7 +63,7 @@ type DownloadResponseSize = int
 
 type DownloadResponseTag = str
 
-type DownloadResponseModified = datetime
+type DownloadResponseModified = HTTPDatetime
 
 type DownloadResponseData = AsyncGenerator[bytes]
 
@@ -78,7 +77,7 @@ type HeadDownloadResponseSize = int
 
 type HeadDownloadResponseTag = str
 
-type HeadDownloadResponseModified = datetime
+type HeadDownloadResponseModified = HTTPDatetime
 
 type UploadRequestEvent = UUID
 

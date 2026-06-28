@@ -12,8 +12,8 @@ from minio.error import MinioException, S3Error
 from urllib3 import BaseHTTPResponse
 
 from numbat.config.models import AmberConfig
-from numbat.services.amber import errors as e
-from numbat.services.amber import models as m
+from numbat.services.data.amber import errors as e
+from numbat.services.data.amber import models as m
 from numbat.utils import asyncify, syncify
 from numbat.utils.read import ReadableIterator
 from numbat.utils.time import httpparse
