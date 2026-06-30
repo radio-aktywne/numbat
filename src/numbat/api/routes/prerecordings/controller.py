@@ -1,6 +1,6 @@
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Annotated, Any, cast
+from typing import Annotated, cast
 
 from litestar import Controller as BaseController
 from litestar import Request, handlers
@@ -18,7 +18,6 @@ from litestar.openapi.spec import (
 from litestar.params import Parameter
 from litestar.response import Response, Stream
 from litestar.status_codes import HTTP_200_OK, HTTP_204_NO_CONTENT
-from pydantic import TypeAdapter
 
 from numbat.api.exceptions import BadRequestException, NotFoundException
 from numbat.api.routes.prerecordings import errors as e
@@ -201,17 +200,23 @@ class Controller(BaseController):
         except e.NotFoundError as ex:
             raise NotFoundException from ex
 
-        def dump(value: Any, type: Any) -> str:  # noqa: A002
-            return str(
-                TypeAdapter(type).dump_python(value, mode="json", round_trip=True)
-            )
+        def dump(value: Serializable) -> str:
+            return str(value.model_dump(mode="json", round_trip=True))
 
         try:
             headers = {
-                "Content-Type": dump(response.type, m.DownloadResponseType),
-                "Content-Length": dump(response.size, m.DownloadResponseSize),
-                "ETag": dump(response.tag, m.DownloadResponseTag),
-                "Last-Modified": dump(response.modified, m.DownloadResponseModified),
+                "Content-Type": dump(
+                    Serializable[m.DownloadResponseType](response.type),
+                ),
+                "Content-Length": dump(
+                    Serializable[m.DownloadResponseSize](response.size),
+                ),
+                "ETag": dump(
+                    Serializable[m.DownloadResponseTag](response.tag),
+                ),
+                "Last-Modified": dump(
+                    Serializable[m.DownloadResponseModified](response.modified),
+                ),
             }
 
             return Stream(response.data, headers=headers)
@@ -273,16 +278,22 @@ class Controller(BaseController):
         except e.NotFoundError as ex:
             raise NotFoundException from ex
 
-        def dump(value: Any, type: Any) -> str:  # noqa: A002
-            return str(
-                TypeAdapter(type).dump_python(value, mode="json", round_trip=True)
-            )
+        def dump(value: Serializable) -> str:
+            return str(value.model_dump(mode="json", round_trip=True))
 
         headers = {
-            "Content-Type": dump(response.type, m.HeadDownloadResponseType),
-            "Content-Length": dump(response.size, m.HeadDownloadResponseSize),
-            "ETag": dump(response.tag, m.HeadDownloadResponseTag),
-            "Last-Modified": dump(response.modified, m.HeadDownloadResponseModified),
+            "Content-Type": dump(
+                Serializable[m.HeadDownloadResponseType](response.type),
+            ),
+            "Content-Length": dump(
+                Serializable[m.HeadDownloadResponseSize](response.size),
+            ),
+            "ETag": dump(
+                Serializable[m.HeadDownloadResponseTag](response.tag),
+            ),
+            "Last-Modified": dump(
+                Serializable[m.HeadDownloadResponseModified](response.modified),
+            ),
         }
 
         return cast("None", Response(None, headers=headers))

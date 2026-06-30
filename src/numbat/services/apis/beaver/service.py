@@ -3,9 +3,9 @@ from http import HTTPMethod, HTTPStatus
 from typing import Any
 
 from httpx import AsyncClient, HTTPError, HTTPStatusError, Response
-from pydantic import TypeAdapter
 
 from numbat.config.models import BeaverConfig, BeaverHTTPConfig
+from numbat.models.base import Jsonable, Serializable
 from numbat.services.apis.beaver import errors as e
 from numbat.services.apis.beaver import models as m
 
@@ -45,15 +45,15 @@ class BeaverEventsService:
     def __init__(self, client: BeaverClient) -> None:
         self.client = client
 
-    def _dump(self, value: Any, type: Any) -> Any:  # noqa: A002
-        return TypeAdapter(type).dump_python(value, mode="json", round_trip=True)
+    def _dump(self, value: Serializable) -> Any:
+        return value.model_dump(mode="json", round_trip=True)
 
-    def _dump_json(self, value: Any, type: Any) -> str:  # noqa: A002
-        return TypeAdapter(type).dump_json(value, round_trip=True).decode()
+    def _dump_json(self, value: Jsonable) -> str:
+        return value.model_dump_json(round_trip=True)
 
     async def get(self, request: m.EventsGetRequest) -> m.EventsGetResponse:
         """Get event."""
-        event_id = self._dump(request.id, m.EventsGetRequestId)
+        event_id = self._dump(Serializable[m.EventsGetRequestId](request.id))
         response = await self.client.request(HTTPMethod.GET, f"/events/{event_id}")
 
         try:
@@ -73,24 +73,28 @@ class BeaverInstancesService:
     def __init__(self, client: BeaverClient) -> None:
         self.client = client
 
-    def _dump(self, value: Any, type: Any) -> Any:  # noqa: A002
-        return TypeAdapter(type).dump_python(value, mode="json", round_trip=True)
+    def _dump(self, value: Serializable) -> Any:
+        return value.model_dump(mode="json", round_trip=True)
 
-    def _dump_json(self, value: Any, type: Any) -> str:  # noqa: A002
-        return TypeAdapter(type).dump_json(value, round_trip=True).decode()
+    def _dump_json(self, value: Jsonable) -> str:
+        return value.model_dump_json(round_trip=True)
 
     async def list(self, request: m.InstancesListRequest) -> m.InstancesListResponse:
         """List instances."""
-        start = self._dump_json(request.start, m.InstancesListRequestStart)
-        end = self._dump_json(request.end, m.InstancesListRequestEnd)
+        start = self._dump_json(Jsonable[m.InstancesListRequestStart](request.start))
+        end = self._dump_json(Jsonable[m.InstancesListRequestEnd](request.end))
         params = {"start": start, "end": end}
 
         if request.where is not None:
-            where = self._dump_json(request.where, m.InstancesListRequestWhere)
+            where = self._dump_json(
+                Jsonable[m.InstancesListRequestWhere](request.where)
+            )
             params["where"] = where
 
         if request.include is not None:
-            include = self._dump_json(request.include, m.InstancesListRequestInclude)
+            include = self._dump_json(
+                Jsonable[m.InstancesListRequestInclude](request.include)
+            )
             params["include"] = include
 
         response = await self.client.request(
@@ -107,12 +111,16 @@ class BeaverInstancesService:
 
     async def get(self, request: m.InstancesGetRequest) -> m.InstancesGetResponse:
         """Get instance."""
-        event_id = self._dump(request.event_id, m.InstancesGetRequestEventId)
-        start = self._dump(request.start, m.InstancesGetRequestStart)
+        event_id = self._dump(
+            Serializable[m.InstancesGetRequestEventId](request.event_id)
+        )
+        start = self._dump(Serializable[m.InstancesGetRequestStart](request.start))
 
         params = {}
         if request.include is not None:
-            include = self._dump_json(request.include, m.InstancesGetRequestInclude)
+            include = self._dump_json(
+                Jsonable[m.InstancesGetRequestInclude](request.include)
+            )
             params["include"] = include
 
         response = await self.client.request(
