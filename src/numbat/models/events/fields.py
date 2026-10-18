@@ -5,6 +5,7 @@ from pydantic import Field
 from numbat.models.base import SerializableModel
 from numbat.utils.time import UTCDatetime
 
+
 type TypeField[T] = Annotated[
     T,
     Field(description="Type of the event."),

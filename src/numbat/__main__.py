@@ -7,6 +7,7 @@ from numbat.config.errors import ConfigError
 from numbat.console import FallbackConsoleBuilder
 from numbat.server import Server
 
+
 cli = CliBuilder().build()
 
 

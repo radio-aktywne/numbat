@@ -1,6 +1,5 @@
 import asyncio
-from collections.abc import AsyncIterator as BaseAsyncIterator
-from collections.abc import Iterator as BaseIterator
+from collections.abc import AsyncIterator as BaseAsyncIterator, Iterator as BaseIterator
 from typing import override
 
 

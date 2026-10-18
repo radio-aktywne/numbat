@@ -7,7 +7,11 @@ from litestar.channels.backends.memory import MemoryChannelsBackend
 from litestar.openapi import OpenAPIConfig
 from litestar.plugins import PluginProtocol
 
-from numbat.api.lifespans import SuppressHTTPXLoggingLifespan, TestLifespan
+from numbat.api.lifespans import (
+    SuppressHTTPX2LoggingLifespan,
+    SuppressHTTPXLoggingLifespan,
+    TestLifespan,
+)
 from numbat.api.openapi import OpenAPIConfigBuilder
 from numbat.api.plugins.pydantic import PydanticPlugin
 from numbat.api.routes.router import router
@@ -34,6 +38,7 @@ class AppBuilder:
         return [
             TestLifespan,
             SuppressHTTPXLoggingLifespan,
+            SuppressHTTPX2LoggingLifespan,
         ]
 
     def _build_openapi_config(self) -> OpenAPIConfig:

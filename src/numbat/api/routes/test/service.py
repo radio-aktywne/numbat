@@ -1,10 +1,8 @@
 from collections.abc import Generator
 from contextlib import contextmanager
 
-from numbat.api.routes.test import errors as e
-from numbat.api.routes.test import models as m
-from numbat.services.test import errors as te
-from numbat.services.test import models as tm
+from numbat.api.routes.test import errors as e, models as m
+from numbat.services.test import errors as te, models as tm
 from numbat.services.test.service import TestService
 
 
