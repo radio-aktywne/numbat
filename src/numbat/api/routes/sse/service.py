@@ -1,10 +1,8 @@
 from collections.abc import AsyncGenerator, Generator
 from contextlib import contextmanager
 
-from numbat.api.routes.sse import errors as e
-from numbat.api.routes.sse import models as m
-from numbat.services.events import errors as ee
-from numbat.services.events import models as em
+from numbat.api.routes.sse import errors as e, models as m
+from numbat.services.events import errors as ee, models as em
 from numbat.services.events.service import EventsService
 
 

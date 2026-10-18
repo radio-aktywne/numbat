@@ -2,7 +2,7 @@ from collections.abc import AsyncGenerator
 
 import pytest
 import pytest_asyncio
-from httpx import AsyncClient, BasicAuth
+from httpx2 import AsyncClient, BasicAuth
 from litestar import Litestar
 from litestar.testing import AsyncTestClient
 from minio import Minio
@@ -33,7 +33,7 @@ async def howlite() -> AsyncGenerator[AsyncDockerContainer]:
     """Run howlite container."""
 
     async def _check() -> None:
-        auth = BasicAuth(username="user", password="password")
+        auth = BasicAuth(username="user", password="password")  # noqa: S106
         async with AsyncClient(base_url="http://localhost:10520", auth=auth) as client:
             response = await client.get("/user/calendar")
             response.raise_for_status()
@@ -126,7 +126,7 @@ def amber_client(amber: AsyncDockerContainer) -> Minio:
     return Minio(
         endpoint="localhost:10610",
         access_key="readwrite",
-        secret_key="password",
+        secret_key="password",  # noqa: S106
         secure=False,
         cert_check=False,
     )

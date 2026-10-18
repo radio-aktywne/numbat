@@ -55,7 +55,7 @@ class MimeType:
         return self.serialize()
 
     @staticmethod
-    def parse(value: Any) -> "MimeType":
+    def parse(value: Any) -> MimeType:
         """Parse a MIME type."""
         parser = MimeTypeParser()
         return parser.parse(value)
@@ -121,7 +121,8 @@ class MimeTypeSerializer:
             for k, v in value.parameters.items()
         ]
 
-        return f"{value.type}/{value.subtype}{'; '.join(['', *parameters]) if parameters else ''}"
+        suffix = f"; {'; '.join(parameters)}" if parameters else ""
+        return f"{value.type}/{value.subtype}{suffix}"
 
     def __call__(self, value: MimeType) -> str:
         """Serialize a MIME type."""

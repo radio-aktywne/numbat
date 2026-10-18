@@ -1,10 +1,8 @@
 from collections.abc import Generator
 from contextlib import contextmanager
 
-from numbat.api.routes.prerecordings import errors as e
-from numbat.api.routes.prerecordings import models as m
-from numbat.services.entities.prerecordings import errors as pe
-from numbat.services.entities.prerecordings import models as pm
+from numbat.api.routes.prerecordings import errors as e, models as m
+from numbat.services.entities.prerecordings import errors as pe, models as pm
 from numbat.services.entities.prerecordings.service import PrerecordingsService
 
 

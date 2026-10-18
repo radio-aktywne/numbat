@@ -1,6 +1,8 @@
 import asyncio
-from collections.abc import AsyncGenerator as BaseAsyncGenerator
-from collections.abc import Generator as BaseGenerator
+from collections.abc import (
+    AsyncGenerator as BaseAsyncGenerator,
+    Generator as BaseGenerator,
+)
 from types import TracebackType
 from typing import Any, overload, override
 
@@ -49,7 +51,7 @@ class Generator[YieldType, SendType](BaseAsyncGenerator[YieldType, SendType]):
         def wrap() -> YieldType | Sentinel:
             try:
                 return self.generator.throw(*args, **kwargs)
-            except (GeneratorExit, StopIteration):
+            except GeneratorExit, StopIteration:
                 return Sentinel()
 
         item = await asyncio.to_thread(wrap)

@@ -1,10 +1,8 @@
 from collections.abc import Generator
 from contextlib import contextmanager
 
-from numbat.api.routes.ping import errors as e
-from numbat.api.routes.ping import models as m
-from numbat.services.ping import errors as pe
-from numbat.services.ping import models as pm
+from numbat.api.routes.ping import errors as e, models as m
+from numbat.services.ping import errors as pe, models as pm
 from numbat.services.ping.service import PingService
 
 

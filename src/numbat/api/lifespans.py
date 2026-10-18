@@ -58,3 +58,26 @@ class SuppressHTTPXLoggingLifespan(Lifespan):
         traceback: TracebackType | None,
     ) -> None:
         self.logger.disabled = self.previously_disabled
+
+
+class SuppressHTTPX2LoggingLifespan(Lifespan):
+    """Lifespan that suppresses httpx2 logging."""
+
+    @property
+    def logger(self) -> logging.Logger:
+        """Httpx2 logger."""
+        return logging.getLogger("httpx2")
+
+    @override
+    async def __aenter__(self) -> None:
+        self.previously_disabled = self.logger.disabled
+        self.logger.disabled = True
+
+    @override
+    async def __aexit__(
+        self,
+        exception_type: type[BaseException] | None,
+        exception: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
+        self.logger.disabled = self.previously_disabled

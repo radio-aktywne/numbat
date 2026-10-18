@@ -2,8 +2,7 @@ from litestar.channels import ChannelsPlugin
 
 from numbat.models.events import test as ev
 from numbat.models.events.types import Event
-from numbat.services.test import errors as e
-from numbat.services.test import models as m
+from numbat.services.test import errors as e, models as m
 
 
 class TestService:
