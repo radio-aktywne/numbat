@@ -327,6 +327,45 @@ class PrerecordingsService:
             await download_response.content.data.aclose()
             raise
 
+    async def headdownload(
+        self, request: m.HeadDownloadRequest
+    ) -> m.HeadDownloadResponse:
+        """Download prerecording headers."""
+        instance = await self._get_instance(request.event, request.start)
+
+        if not instance:
+            raise e.InstanceNotFoundError(request.event, request.start)
+
+        if instance.event is None:
+            raise e.ServiceError
+
+        if instance.event.type != bm.EventType.prerecorded:
+            raise e.BadEventTypeError(instance.event.type)
+
+        key = self._make_key(instance.event.id, instance.start)
+
+        get_request = am.GetRequest(name=key)
+
+        with (
+            self._handle_errors(),
+            self._handle_not_found(instance.event.id, instance.start),
+        ):
+            get_response = await self._amber.get(get_request)
+
+        content_type = self._parse_content_type(get_response.object.type)
+
+        if content_type is None:
+            raise e.PrerecordingNotFoundError(instance.event.id, instance.start)
+
+        return m.HeadDownloadResponse(
+            content=m.HeadDownloadContent(
+                type=content_type,
+                size=get_response.object.size,
+                tag=get_response.object.tag,
+                modified=get_response.object.modified,
+            )
+        )
+
     async def upload(self, request: m.UploadRequest) -> m.UploadResponse:
         """Upload a prerecording."""
         instance = await self._get_instance(request.event, request.start)

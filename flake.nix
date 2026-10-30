@@ -55,7 +55,6 @@
         trunk = pkgs.trunk-io;
         uv = pkgs.uv;
         cacert = pkgs.cacert;
-        mc = pkgs.minio-client;
         s5cmd = pkgs.s5cmd;
         usql = pkgs.usql;
         tini = pkgs.tini;
@@ -95,7 +94,6 @@
               trunk
               uv
               cacert
-              mc
               s5cmd
               usql
             ];

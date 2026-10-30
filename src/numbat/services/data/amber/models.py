@@ -68,7 +68,7 @@ class ListRequest:
     """Request for listing objects."""
 
     prefix: str | None = None
-    """Prefix of the object names."""
+    """Directory prefix to list."""
 
     recursive: bool = True
     """Whether to list objects recursively."""
@@ -106,7 +106,7 @@ class DownloadRequest:
     """Name of the object."""
 
     chunk: int = 5 * (1024**2)
-    """Chunk size for downloading."""
+    """Minimum chunk size for downloading."""
 
 
 @datamodel
