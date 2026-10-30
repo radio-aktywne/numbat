@@ -9,8 +9,8 @@ dependencies = [
   "httpx2 ~= 2.13.0",
   # Main API framework
   "litestar ~= 2.24.0",
-  # MinIO client
-  "minio ~= 7.2.0",
+  # S3 client
+  "obstore ~= 0.12.0",
   # Defining data models
   "pydantic ~= 2.13.0",
   # Loading configuration

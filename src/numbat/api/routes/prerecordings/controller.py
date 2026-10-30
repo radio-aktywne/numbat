@@ -304,6 +304,7 @@ class Controller(BaseController):
         status_code=HTTP_204_NO_CONTENT,
         raises=[BadRequestException],
         operation_class=UploadOperation,
+        request_max_body_size=None,
     )
     async def upload(
         self,

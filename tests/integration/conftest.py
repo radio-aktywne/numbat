@@ -5,7 +5,6 @@ import pytest_asyncio
 from httpx2 import AsyncClient, BasicAuth
 from litestar import Litestar
 from litestar.testing import AsyncTestClient
-from minio import Minio
 
 from numbat.api.app import AppBuilder
 from numbat.config.builder import ConfigBuilder
@@ -80,7 +79,7 @@ async def amber() -> AsyncGenerator[AsyncDockerContainer]:
 
     async def _check() -> None:
         async with AsyncClient(base_url="http://localhost:10610") as client:
-            response = await client.get("/minio/health/ready")
+            response = await client.get("/health/ready")
             response.raise_for_status()
 
     container = AsyncDockerContainer("ghcr.io/radio-aktywne/databases/amber:latest")
@@ -118,27 +117,6 @@ async def beaver(
     async with container as container:
         await waiter.wait()
         yield container
-
-
-@pytest.fixture(scope="session")
-def amber_client(amber: AsyncDockerContainer) -> Minio:
-    """Build amber client."""
-    return Minio(
-        endpoint="localhost:10610",
-        access_key="readwrite",
-        secret_key="password",  # noqa: S106
-        secure=False,
-        cert_check=False,
-    )
-
-
-@pytest_asyncio.fixture(loop_scope="session", scope="session")
-async def beaver_client(
-    beaver: AsyncDockerContainer,
-) -> AsyncGenerator[AsyncClient]:
-    """Build beaver client."""
-    async with AsyncClient(base_url="http://localhost:10500") as client:
-        yield client
 
 
 @pytest_asyncio.fixture(loop_scope="session", scope="session")
